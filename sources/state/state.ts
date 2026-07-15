@@ -69,6 +69,7 @@ export type State = {
   isRenderingCharacter: boolean;
   /** Most recent sprite asset paths that failed to load while composing the preview. */
   assetLoadFailures: string[];
+  lowEffectsMode: boolean;
   enabledLicenses: Record<string, boolean>;
   enabledAnimations: Record<string, boolean>;
 
@@ -156,6 +157,7 @@ export const state: State = {
   previewBootstrapRenderDone: false,
   isRenderingCharacter: false,
   assetLoadFailures: [],
+  lowEffectsMode: false,
   enabledLicenses: Object.fromEntries(
     LICENSE_CONFIG.map((lic) => [lic.key, true]),
   ),

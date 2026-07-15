@@ -22,10 +22,17 @@ export function resetImageLoadCache(): void {
 }
 
 /** Load an image. Rejects with `Error("Failed to load <src>")` on error. */
-export function loadImage(src: string): Promise<HTMLImageElement> {
+export function loadImage(
+  src: string,
+  signal?: AbortSignal,
+): Promise<HTMLImageElement> {
   if (loadedImages[src]) {
     return Promise.resolve(loadedImages[src]);
   }
+  if (signal?.aborted) {
+    return Promise.reject(new DOMException("Image load aborted", "AbortError"));
+  }
+
   const existing = inFlight.get(src);
   if (existing) {
     return existing;
@@ -50,22 +57,44 @@ export function loadImage(src: string): Promise<HTMLImageElement> {
   }
 
   const img = new Image();
-  img.onload = () => {
-    loadedImages[src] = img;
+  const cleanup = () => {
+    img.onload = null;
+    img.onerror = null;
+    signal?.removeEventListener("abort", onAbort);
+  };
+  const onAbort = () => {
+    cleanup();
     inFlight.delete(src);
+    img.src = "";
+    reject(new DOMException("Image load aborted", "AbortError"));
+  };
+  signal?.addEventListener("abort", onAbort, { once: true });
+  img.decoding = "async";
+  img.onload = () => {
+    const finish = () => {
+      loadedImages[src] = img;
+      inFlight.delete(src);
 
-    if (profiler) {
-      profiler.mark(`image-load:${src}:end`);
-      profiler.measure(
-        `image-load:${src}`,
-        `image-load:${src}:start`,
-        `image-load:${src}:end`,
-      );
+      if (profiler) {
+        profiler.mark(`image-load:${src}:end`);
+        profiler.measure(
+          `image-load:${src}`,
+          `image-load:${src}:start`,
+          `image-load:${src}:end`,
+        );
+      }
+
+      cleanup();
+      resolve(img);
+    };
+    if (typeof img.decode === "function") {
+      void img.decode().then(finish, finish);
+    } else {
+      finish();
     }
-
-    resolve(img);
   };
   img.onerror = () => {
+    cleanup();
     inFlight.delete(src);
     console.error(`Failed to load image: ${src}`);
     reject(new Error(`Failed to load ${src}`));
@@ -86,10 +115,11 @@ export async function loadImagesInParallel<T>(
   items: T[],
   getPath: (item: T) => string = (item) =>
     (item as { spritePath: string }).spritePath,
+  signal?: AbortSignal,
 ): Promise<LoadedImage<T>[]> {
   const promises = items.map(
     (item): Promise<LoadedImage<T>> =>
-      loadImage(getPath(item))
+      loadImage(getPath(item), signal)
         .then((img): LoadedImage<T> => ({ item, img, success: true }))
         .catch(() => {
           debugWarn(`Failed to load sprite: ${getPath(item)}`);
