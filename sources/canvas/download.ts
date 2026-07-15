@@ -38,3 +38,17 @@ export function downloadFile(
   a.click();
   URL.revokeObjectURL(url);
 }
+
+export function downloadBlob(
+  blob: Blob,
+  filename: string,
+  type: string = blob.type || "application/octet-stream",
+): void {
+  const typedBlob = blob.type === type ? blob : new Blob([blob], { type });
+  const url = URL.createObjectURL(typedBlob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(url);
+}
