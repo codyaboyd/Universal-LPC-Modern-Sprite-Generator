@@ -18,6 +18,7 @@ import {
   CUSTOM_VERSION,
   type PaletteOption,
 } from "../../state/palettes.ts";
+import { focusFirst, trapTabKey } from "../../utils/accessibility.ts";
 
 type RootViewState = {
   palettePreviewGateSeq?: number;
@@ -179,6 +180,13 @@ function renderLoadingOverlay(onClose: () => void, message: string) {
       {
         onclick: (e: MouseEvent) => e.stopPropagation(),
         "data-previews-ready": "false",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-label": message,
+        tabindex: -1,
+        oncreate: (v: m.VnodeDOM) => focusFirst(v.dom as HTMLElement),
+        onkeydown: (e: KeyboardEvent) =>
+          trapTabKey(e, e.currentTarget as HTMLElement, onClose),
       },
       m("p.has-text-grey", message),
     ),
@@ -225,11 +233,22 @@ function renderModal(
       {
         onclick: (e: MouseEvent) => e.stopPropagation(),
         "data-previews-ready": previewsReady ? "true" : "false",
+        role: "dialog",
+        "aria-modal": "true",
+        "aria-labelledby": `palette-editor-title-${itemId}-${opt.idx}`,
+        tabindex: -1,
+        oncreate: (v: m.VnodeDOM) => focusFirst(v.dom as HTMLElement),
+        onkeydown: (e: KeyboardEvent) =>
+          trapTabKey(e, e.currentTarget as HTMLElement, onClose),
       },
       [
         m("header.is-flex.rpg-palette-editor__header", [
           m("div", [
-            m("h4", opt.label ?? "RPG palette editor"),
+            m(
+              "h4",
+              { id: `palette-editor-title-${itemId}-${opt.idx}` },
+              opt.label ?? "RPG palette editor",
+            ),
             m("p.rpg-palette-editor__subtitle", [
               "Safe palette swaps only. Source PNG assets are never modified.",
             ]),
@@ -386,10 +405,20 @@ function renderModal(
                     onclick: () => {
                       state.expandedNodes[nodePath] = !isExpanded;
                     },
+                    onkeydown: (e: KeyboardEvent) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault();
+                        state.expandedNodes[nodePath] = !isExpanded;
+                      }
+                    },
+                    role: "button",
+                    tabindex: 0,
+                    "aria-expanded": isExpanded ? "true" : "false",
                   },
                   [
                     m("span.tree-arrow", {
                       class: isExpanded ? "expanded" : "collapsed",
+                      "aria-hidden": "true",
                     }),
                     m(
                       "span.palette-version",
@@ -438,6 +467,12 @@ function renderModal(
                                     "has-background-white-ter",
                                   );
                               },
+                              onkeydown: (e: KeyboardEvent) => {
+                                if (e.key === "Enter" || e.key === " ") {
+                                  e.preventDefault();
+                                  (e.currentTarget as HTMLElement).click();
+                                }
+                              },
                               onclick: (e: MouseEvent) => {
                                 e.stopPropagation();
                                 rememberRecentColor({
@@ -465,6 +500,8 @@ function renderModal(
                                 ],
                               ),
                               m("canvas.variant-canvas.box.p-0", {
+                                role: "img",
+                                "aria-label": `${colorName(palette)} ${opt.label ?? "palette"} preview`,
                                 width: compactDisplay
                                   ? COMPACT_FRAME_SIZE
                                   : FRAME_SIZE,

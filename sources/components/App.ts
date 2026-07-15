@@ -399,26 +399,39 @@ function renderGuidedWorkflow(catalog: CatalogReader, local: AppState) {
                 m("h4.h6", [m(`i.bi.${active.icon}.me-2`), active.label]),
                 m("p.mb-3", active.help),
                 active.action === "save"
-                  ? m("div.input-group.mb-3", [
-                      m("span.input-group-text", "Hero name"),
-                      m("input.form-control", {
-                        value: local.characterName,
-                        placeholder: "Ser Rowan",
-                        oninput: (e: Event) =>
-                          (local.characterName = (
-                            e.target as HTMLInputElement
-                          ).value),
-                      }),
+                  ? [
+                      m("div.input-group.mb-3", [
+                        m(
+                          "label.input-group-text",
+                          { for: "guided-hero-name" },
+                          "Hero name",
+                        ),
+                        m("input.form-control", {
+                          id: "guided-hero-name",
+                          "aria-describedby": "guided-hero-name-help",
+                          value: local.characterName,
+                          placeholder: "Ser Rowan",
+                          oninput: (e: Event) =>
+                            (local.characterName = (
+                              e.target as HTMLInputElement
+                            ).value),
+                        }),
+                        m(
+                          "button.btn.btn-success",
+                          {
+                            type: "button",
+                            onclick: () =>
+                              saveGuidedCharacter(local.characterName, local),
+                          },
+                          "Save",
+                        ),
+                      ]),
                       m(
-                        "button.btn.btn-success",
-                        {
-                          type: "button",
-                          onclick: () =>
-                            saveGuidedCharacter(local.characterName, local),
-                        },
-                        "Save",
+                        "div.form-text",
+                        { id: "guided-hero-name-help" },
+                        "Name is saved only in this browser.",
                       ),
-                    ])
+                    ]
                   : null,
                 active.action === "save" && local.saveConfirmationNonce > 0
                   ? m(
@@ -611,10 +624,18 @@ export const App: m.Component<AppAttrs, AppState> = {
       interactionFeedback.toasts.length
         ? m(
             "div.rpg-feedback-toasts",
-            { "aria-live": "polite", "aria-atomic": "false" },
+            {
+              "aria-live": "polite",
+              "aria-atomic": "true",
+              "aria-relevant": "additions",
+            },
             interactionFeedback.toasts.map((toast) =>
               m("div.rpg-feedback-toast", { key: toast.id, role: "status" }, [
-                m("span.rpg-feedback-toast__icon", "✦"),
+                m(
+                  "span.rpg-feedback-toast__icon",
+                  { "aria-hidden": "true" },
+                  "✦",
+                ),
                 m("span.rpg-feedback-toast__message", toast.message),
                 toast.undo
                   ? m(
@@ -625,7 +646,7 @@ export const App: m.Component<AppAttrs, AppState> = {
                   : null,
                 m("button.btn-close btn-close-white", {
                   type: "button",
-                  "aria-label": "Dismiss",
+                  "aria-label": `Dismiss notification: ${toast.message}`,
                   onclick: () => dismissToast(toast.id),
                 }),
               ]),
@@ -674,6 +695,7 @@ export const App: m.Component<AppAttrs, AppState> = {
           id: "exportSheet",
           tabindex: "-1",
           "aria-labelledby": "exportSheetLabel",
+          "aria-describedby": "exportSheetDescription",
         },
         [
           m("div.offcanvas-header", [
@@ -681,6 +703,11 @@ export const App: m.Component<AppAttrs, AppState> = {
               "h2.h5.offcanvas-title",
               { id: "exportSheetLabel" },
               "Export your hero",
+            ),
+            m(
+              "p.sr-only",
+              { id: "exportSheetDescription" },
+              "Export options open in a bottom sheet. Focus remains inside until the sheet is closed.",
             ),
             m("button.btn-close", {
               type: "button",

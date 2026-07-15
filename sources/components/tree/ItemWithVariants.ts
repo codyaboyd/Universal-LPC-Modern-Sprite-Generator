@@ -86,6 +86,16 @@ export const ItemWithVariants: m.Component<
           "div.tree-label",
           {
             title: rowTitle,
+            role: "button",
+            tabindex: 0,
+            "aria-expanded": isExpanded ? "true" : "false",
+            "aria-label": `${isExpanded ? "Collapse" : "Expand"} ${displayName}`,
+            onkeydown: (e: KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                (e.currentTarget as HTMLElement).click();
+              }
+            },
             onclick: () => {
               state.expandedNodes[nodePath] = !isExpanded;
               if (state.expandedNodes[nodePath]) {
@@ -99,6 +109,7 @@ export const ItemWithVariants: m.Component<
           [
             m("span.tree-arrow", {
               class: isExpanded ? "expanded" : "collapsed",
+              "aria-hidden": "true",
             }),
             m("span", displayName),
             !isCompatible ? m("span.ml-1", "⚠️") : null,
@@ -156,6 +167,17 @@ export const ItemWithVariants: m.Component<
                         if (!isCompatible) return; // Prevent selecting incompatible
                         selectItem(itemId, variant, isSelected);
                       },
+                      onkeydown: (e: KeyboardEvent) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          (e.currentTarget as HTMLElement).click();
+                        }
+                      },
+                      role: "button",
+                      tabindex: isCompatible ? 0 : -1,
+                      "aria-disabled": isCompatible ? "false" : "true",
+                      "aria-pressed": isSelected ? "true" : "false",
+                      "aria-label": `${isSelected ? "Selected" : "Select"} ${capitalize(variantDisplayName)} ${displayName}`,
                     },
                     [
                       m(
@@ -163,6 +185,8 @@ export const ItemWithVariants: m.Component<
                         capitalize(variantDisplayName),
                       ),
                       m("canvas.variant-canvas.box.p-0", {
+                        role: "img",
+                        "aria-label": `${capitalize(variantDisplayName)} ${displayName} preview`,
                         width: compactDisplay ? COMPACT_FRAME_SIZE : FRAME_SIZE,
                         height: compactDisplay
                           ? COMPACT_FRAME_SIZE
