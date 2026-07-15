@@ -752,3 +752,69 @@ body {
 .character-summary-card .tags {
   gap: 0.25rem;
 }
+
+.randomizer-panel {
+  overflow: hidden;
+}
+.randomizer-lock-grid,
+.randomizer-choice-locks {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem 0.75rem;
+}
+.randomizer-summon {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  background: radial-gradient(
+    circle,
+    rgba(255, 209, 102, 0.3),
+    transparent 45%
+  );
+  z-index: 2;
+  animation: randomizer-summon-fade 650ms ease-out both;
+}
+.randomizer-summon span {
+  position: absolute;
+  width: min(28rem, 80vw);
+  aspect-ratio: 1;
+  border: 2px solid rgba(112, 72, 183, 0.35);
+  border-radius: 50%;
+  box-shadow: 0 0 2rem rgba(255, 209, 102, 0.45);
+  animation: randomizer-summon-ring 650ms ease-out both;
+}
+.randomizer-summon span:nth-child(2) {
+  width: min(20rem, 60vw);
+  animation-delay: 80ms;
+}
+.randomizer-summon span:nth-child(3) {
+  width: min(12rem, 38vw);
+  animation-delay: 140ms;
+}
+@keyframes randomizer-summon-fade {
+  0% {
+    opacity: 0;
+  }
+  20% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes randomizer-summon-ring {
+  from {
+    transform: scale(0.72) rotate(0deg);
+  }
+  to {
+    transform: scale(1.08) rotate(28deg);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .randomizer-summon,
+  .randomizer-summon span {
+    animation: none !important;
+  }
+}

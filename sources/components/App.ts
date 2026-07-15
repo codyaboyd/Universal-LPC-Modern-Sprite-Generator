@@ -7,6 +7,7 @@ import { Download } from "./download/Download.ts";
 import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
+import { RandomizerPanel } from "./RandomizerPanel.ts";
 import { CharacterPresentation } from "./CharacterPresentation.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { downloadAsPNG } from "../canvas/download.ts";
@@ -537,6 +538,7 @@ export const App: m.Component<AppAttrs, AppState> = {
         ),
       ]),
       renderGuidedWorkflow(vnode.attrs.catalog, vnode.state),
+      m(RandomizerPanel, { catalog: vnode.attrs.catalog }),
       m("div.creator-workbench", [
         m(
           "aside.creator-categories",

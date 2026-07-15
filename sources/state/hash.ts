@@ -278,7 +278,10 @@ export function getHashParamsforSelections(
 }
 
 export function syncSelectionsToHash(catalog: CatalogReader): void {
+  const existing = getHashParams();
   const params = getHashParamsforSelections(catalog, state.selections);
+  if (existing.randomSeed) params.randomSeed = existing.randomSeed;
+  if (existing.randomMode) params.randomMode = existing.randomMode;
   setHashParams(params);
 }
 
