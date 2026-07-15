@@ -14,6 +14,7 @@ import {
 } from "../../state/filters.ts";
 import { COMPACT_FRAME_SIZE, FRAME_SIZE } from "../../state/constants.ts";
 import { matchesSearch, normalizeAssetLabel } from "../../utils/helpers.ts";
+import { loadImage } from "../../canvas/load-image.ts";
 import {
   emitInteractionFeedback,
   interactionFeedback,
@@ -23,6 +24,15 @@ import {
 const FAV_KEY = "ulpc:item-browser:favorites";
 const RECENT_KEY = "ulpc:item-browser:recent";
 const PAGE_SIZE = 72;
+const THUMBNAIL_CACHE_LIMIT = 192;
+const thumbnailCache = new Map<string, HTMLCanvasElement>();
+function rememberThumbnail(key: string, canvas: HTMLCanvasElement): void {
+  thumbnailCache.set(key, canvas);
+  if (thumbnailCache.size > THUMBNAIL_CACHE_LIMIT) {
+    const oldest = thumbnailCache.keys().next().value;
+    if (oldest) thumbnailCache.delete(oldest);
+  }
+}
 
 type ViewMode = "grid" | "list";
 type SortMode = "az" | "recent" | "group";
@@ -178,16 +188,19 @@ const PreviewCanvas: m.Component<{
   oncreate(vnode) {
     const canvas = vnode.dom as HTMLCanvasElement;
     const key = `preview:${vnode.attrs.item.itemId}:${state.bodyType}:${vnode.attrs.item.meta.variants[0] ?? ""}`;
-    const cached = sessionStorage.getItem(key);
+    const ctx = canvas.getContext("2d");
+    const controller = new AbortController();
+    (
+      vnode.state as { io?: IntersectionObserver; controller?: AbortController }
+    ).controller = controller;
+
     const paint = () => {
+      if (!ctx || controller.signal.aborted) return;
+      const cached = thumbnailCache.get(key);
       if (cached) {
-        const img = new Image();
-        img.onload = () => canvas.getContext("2d")?.drawImage(img, 0, 0);
-        img.src = cached;
+        ctx.drawImage(cached, 0, 0);
         return;
       }
-      const ctx = canvas.getContext("2d");
-      if (!ctx) return;
       const meta = vnode.attrs.item.meta;
       const size = COMPACT_FRAME_SIZE;
       const row = meta.preview_row ?? 2;
@@ -199,17 +212,12 @@ const PreviewCanvas: m.Component<{
           state.bodyType,
           state.selections,
           meta.variants[0],
-        ).map(
-          (layer) =>
-            new Promise<HTMLImageElement | null>((resolve) => {
-              const img = new Image();
-              img.loading = "lazy";
-              img.onload = () => resolve(img);
-              img.onerror = () => resolve(null);
-              img.src = layer.path;
-            }),
+        ).map((layer) =>
+          loadImage(layer.path, controller.signal).catch(() => null),
         ),
       ).then((imgs) => {
+        if (controller.signal.aborted) return;
+        ctx.clearRect(0, 0, size, size);
         imgs.forEach(
           (img) =>
             img &&
@@ -225,11 +233,11 @@ const PreviewCanvas: m.Component<{
               size,
             ),
         );
-        try {
-          sessionStorage.setItem(key, canvas.toDataURL());
-        } catch {
-          /* ignore quota */
-        }
+        const cachedCanvas = document.createElement("canvas");
+        cachedCanvas.width = size;
+        cachedCanvas.height = size;
+        cachedCanvas.getContext("2d")?.drawImage(canvas, 0, 0);
+        rememberThumbnail(key, cachedCanvas);
       });
     };
     const io = new IntersectionObserver((entries) => {
@@ -242,7 +250,12 @@ const PreviewCanvas: m.Component<{
     (vnode.state as { io?: IntersectionObserver }).io = io;
   },
   onremove(vnode) {
-    (vnode.state as { io?: IntersectionObserver }).io?.disconnect();
+    const local = vnode.state as {
+      io?: IntersectionObserver;
+      controller?: AbortController;
+    };
+    local.io?.disconnect();
+    local.controller?.abort();
   },
   view() {
     return m("canvas.item-browser__thumb", {

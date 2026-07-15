@@ -189,6 +189,7 @@ export function setOffscreenCanvasInitializedForTests(value: boolean): void {
 /** Commit 10: one render at a time; new calls wait behind the in-flight one. */
 let renderCharacterSerial: Promise<void> = Promise.resolve();
 let renderCharacterGeneration = 0;
+let renderCharacterAbortController: AbortController | null = null;
 
 /** @internal */
 export function resetRenderCharacterQueueForTests(): void {
@@ -208,9 +209,12 @@ export async function renderCharacter(
 ): Promise<void> {
   await catalogReady.onLayersReady;
 
+  renderCharacterAbortController?.abort();
+  renderCharacterAbortController = new AbortController();
+  const signal = renderCharacterAbortController.signal;
   const generation = ++renderCharacterGeneration;
   const p = renderCharacterSerial.then(() =>
-    runRenderCharacter(selections, bodyType, targetCanvas, generation),
+    runRenderCharacter(selections, bodyType, targetCanvas, generation, signal),
   );
   renderCharacterSerial = p.then(
     () => {},
@@ -224,6 +228,7 @@ async function runRenderCharacter(
   bodyType: string,
   targetCanvas: HTMLCanvasElement | null,
   generation: number,
+  signal: AbortSignal,
 ): Promise<void> {
   const profiler = window.profiler;
 
@@ -452,7 +457,7 @@ async function runRenderCharacter(
         return Promise.resolve({ item, img: item.source.image, success: true });
       }
       const { spritePath } = item.source;
-      return loadImage(spritePath)
+      return loadImage(spritePath, signal)
         .then((img) => ({ item, img, success: true }))
         .catch(() => {
           debugWarn(`Failed to load sprite: ${spritePath}`);
@@ -544,7 +549,11 @@ async function runRenderCharacter(
         areaItems.sort((a, b) => a.zPos - b.zPos);
 
         // Load all custom area images in parallel
-        const loadedCustomImages = await loadImagesInParallel(areaItems);
+        const loadedCustomImages = await loadImagesInParallel(
+          areaItems,
+          undefined,
+          signal,
+        );
         for (const { item: areaItem, success } of loadedCustomImages) {
           if (!success) {
             assetLoadFailures.add(areaItem.spritePath);
@@ -577,7 +586,7 @@ async function runRenderCharacter(
         }
       }
     }
-    if (generation !== renderCharacterGeneration) {
+    if (signal.aborted || generation !== renderCharacterGeneration) {
       return;
     }
 

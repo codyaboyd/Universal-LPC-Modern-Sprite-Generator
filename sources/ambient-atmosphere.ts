@@ -2,6 +2,7 @@ import m from "mithril";
 
 const THEME_KEY = "ulpc:ambient-theme";
 const EFFECTS_KEY = "ulpc:ambient-effects";
+const PERF_MODE_KEY = "ulpc:performance-mode";
 const THEMES = ["arcane-workshop", "forest-camp", "royal-armory"] as const;
 type Theme = (typeof THEMES)[number];
 
@@ -23,6 +24,7 @@ const THEME_LABELS: Record<Theme, string> = {
 
 let theme: Theme = readTheme();
 let effectsEnabled = readEffectsEnabled();
+let performanceMode = localStorage.getItem(PERF_MODE_KEY) === "true";
 let lowPower = false;
 let reducedMotion = false;
 let canvas: HTMLCanvasElement | null = null;
@@ -54,7 +56,13 @@ function applyAtmosphereState(): void {
   document.documentElement.dataset.ambientEffects = effectsEnabled
     ? "enabled"
     : "disabled";
-  document.documentElement.classList.toggle("ambient-low-power", lowPower);
+  document.documentElement.classList.toggle(
+    "ambient-low-power",
+    lowPower || performanceMode,
+  );
+  document.documentElement.dataset.performanceMode = performanceMode
+    ? "low-effects"
+    : "standard";
   document.documentElement.classList.toggle(
     "ambient-paused",
     document.hidden || reducedMotion || !effectsEnabled,
@@ -63,7 +71,10 @@ function applyAtmosphereState(): void {
 
 function resizeCanvas(): void {
   if (!canvas) return;
-  const scale = Math.min(window.devicePixelRatio || 1, lowPower ? 1 : 1.5);
+  const scale = Math.min(
+    window.devicePixelRatio || 1,
+    lowPower || performanceMode ? 1 : 1.5,
+  );
   canvas.width = Math.floor(window.innerWidth * scale);
   canvas.height = Math.floor(window.innerHeight * scale);
   canvas.style.width = `${window.innerWidth}px`;
@@ -78,7 +89,7 @@ function particleColor(): string {
 }
 
 function seedParticles(): void {
-  const count = lowPower ? 18 : 46;
+  const count = lowPower || performanceMode ? 12 : 46;
   particles = Array.from({ length: count }, () => ({
     x: Math.random() * window.innerWidth,
     y: Math.random() * window.innerHeight,
@@ -90,10 +101,27 @@ function seedParticles(): void {
   }));
 }
 
+function shouldAnimate(): boolean {
+  return (
+    !document.hidden && !reducedMotion && effectsEnabled && !performanceMode
+  );
+}
+
+function startAnimationLoop(): void {
+  if (!animationFrame && shouldAnimate()) {
+    lastTime = performance.now();
+    animationFrame = window.requestAnimationFrame(draw);
+  }
+}
+
+function stopAnimationLoop(): void {
+  if (animationFrame) window.cancelAnimationFrame(animationFrame);
+  animationFrame = 0;
+}
+
 function draw(time: number): void {
-  animationFrame = window.requestAnimationFrame(draw);
-  if (!ctx || !canvas || document.hidden || reducedMotion || !effectsEnabled)
-    return;
+  animationFrame = 0;
+  if (!ctx || !canvas || !shouldAnimate()) return;
   const delta = Math.min((time - lastTime) / 1000 || 0.016, 0.05);
   lastTime = time;
   ctx.clearRect(0, 0, window.innerWidth, window.innerHeight);
@@ -111,7 +139,8 @@ function draw(time: number): void {
       p.hue = particleColor();
     }
     const alpha =
-      Math.max(0, Math.sin(p.life * Math.PI)) * (lowPower ? 0.28 : 0.5);
+      Math.max(0, Math.sin(p.life * Math.PI)) *
+      (lowPower || performanceMode ? 0.2 : 0.5);
     const gradient = ctx.createRadialGradient(
       p.x,
       p.y,
@@ -127,6 +156,7 @@ function draw(time: number): void {
     ctx.arc(p.x, p.y, p.size * 5, 0, Math.PI * 2);
     ctx.fill();
   }
+  animationFrame = window.requestAnimationFrame(draw);
 }
 
 function setTheme(nextTheme: Theme): void {
@@ -134,6 +164,8 @@ function setTheme(nextTheme: Theme): void {
   localStorage.setItem(THEME_KEY, theme);
   seedParticles();
   applyAtmosphereState();
+  if (shouldAnimate()) startAnimationLoop();
+  else stopAnimationLoop();
   m.redraw();
 }
 
@@ -141,6 +173,19 @@ function setEffectsEnabled(enabled: boolean): void {
   effectsEnabled = enabled;
   localStorage.setItem(EFFECTS_KEY, String(enabled));
   applyAtmosphereState();
+  if (shouldAnimate()) startAnimationLoop();
+  else stopAnimationLoop();
+  m.redraw();
+}
+
+function setPerformanceMode(enabled: boolean): void {
+  performanceMode = enabled;
+  localStorage.setItem(PERF_MODE_KEY, String(enabled));
+  resizeCanvas();
+  seedParticles();
+  applyAtmosphereState();
+  if (shouldAnimate()) startAnimationLoop();
+  else stopAnimationLoop();
   m.redraw();
 }
 
@@ -159,12 +204,18 @@ export function initAmbientAtmosphere(): void {
     resizeCanvas();
     seedParticles();
   });
-  document.addEventListener("visibilitychange", applyAtmosphereState);
+  document.addEventListener("visibilitychange", () => {
+    applyAtmosphereState();
+    if (shouldAnimate()) startAnimationLoop();
+    else stopAnimationLoop();
+  });
   motionQuery.addEventListener("change", () => {
     reducedMotion = motionQuery.matches;
     applyAtmosphereState();
+    if (shouldAnimate()) startAnimationLoop();
+    else stopAnimationLoop();
   });
-  animationFrame = window.requestAnimationFrame(draw);
+  startAnimationLoop();
 }
 
 export const AmbientSettings: m.Component = {
@@ -197,8 +248,17 @@ export const AmbientSettings: m.Component = {
           }),
           m("span.form-check-label", "Ambient effects"),
         ]),
-        lowPower
-          ? m("p.ambient-settings__note", "Simplified for this device")
+        m("label.form-check.form-switch ambient-settings__toggle", [
+          m("input.form-check-input", {
+            type: "checkbox",
+            checked: performanceMode,
+            onchange: (event: Event) =>
+              setPerformanceMode((event.target as HTMLInputElement).checked),
+          }),
+          m("span.form-check-label", "Low-effects performance mode"),
+        ]),
+        lowPower || performanceMode
+          ? m("p.ambient-settings__note", "Simplified effects for performance")
           : null,
       ],
     );

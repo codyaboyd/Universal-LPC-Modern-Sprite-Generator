@@ -33,6 +33,7 @@ let fpsSampleStart = performance.now();
 let fpsSampleFrames = 0;
 let previewVisible = true;
 let reducedMotionQuery: MediaQueryList | null = null;
+let maskScratchCanvas: HTMLCanvasElement | null = null;
 
 // Track custom animations present in current render
 let currentCustomAnimations: Record<string, CustomAnimationDefinition> = {};
@@ -123,9 +124,15 @@ function paintPreviewFrameForCycleIndex(cycleIndex: number): void {
   if (state.applyTransparencyMask) {
     // using a tmpCanvas here to avoid modifying the original offscreen canvas
     // which causes a bug if the user toggles the checkbox multiple times
-    tmpCanvas = document.createElement("canvas");
-    tmpCanvas.width = canvas.width;
-    tmpCanvas.height = canvas.height;
+    maskScratchCanvas ??= document.createElement("canvas");
+    tmpCanvas = maskScratchCanvas;
+    if (
+      tmpCanvas.width !== canvas.width ||
+      tmpCanvas.height !== canvas.height
+    ) {
+      tmpCanvas.width = canvas.width;
+      tmpCanvas.height = canvas.height;
+    }
     const tmpCtx = get2DContext(tmpCanvas);
     tmpCtx.drawImage(canvas, 0, 0);
     applyTransparencyMaskToCanvas(tmpCanvas, tmpCtx);
