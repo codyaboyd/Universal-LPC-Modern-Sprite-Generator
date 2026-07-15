@@ -20,6 +20,18 @@ export type Selection = {
 /** All selections, keyed by selection group (`type_name` of the item or recolor slot). */
 export type Selections = Record<string, Selection>;
 
+export type CharacterMetadata = {
+  name: string;
+  title: string;
+  archetype: string;
+  customArchetype: string;
+  backstory: string;
+  notes: string;
+  tags: string;
+  savedAt: string;
+  modifiedAt: string;
+};
+
 /**
  * State.ts treats catalog metadata defensively — fields like `type_name` are
  * narrowed at each access. Modeling the DI return as `Partial<ItemMerged>`
@@ -35,6 +47,7 @@ export type State = {
   // saved in URL hash
   selections: Selections;
   bodyType: string;
+  characterMetadata: CharacterMetadata;
 
   // potentially saved in future
   selectedAnimation: string;
@@ -109,6 +122,17 @@ export const state: State = {
   // state that is saved in url hash
   selections: {},
   bodyType: BODY_TYPES[0],
+  characterMetadata: {
+    name: "",
+    title: "",
+    archetype: "custom",
+    customArchetype: "",
+    backstory: "",
+    notes: "",
+    tags: "",
+    savedAt: "",
+    modifiedAt: new Date().toISOString(),
+  },
 
   // State that is currently not saved but could be in future
   selectedAnimation: "walk",
@@ -196,6 +220,11 @@ export async function selectDefaults(): Promise<void> {
 
 export async function resetAll(): Promise<void> {
   state.selections = {};
+  state.characterMetadata = {
+    ...state.characterMetadata,
+    savedAt: "",
+    modifiedAt: new Date().toISOString(),
+  };
   state.customUploadedImage = null;
   state.customImageZPos = 0;
   await stateDeps.selectDefaults();

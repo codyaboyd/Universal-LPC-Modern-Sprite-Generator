@@ -724,3 +724,31 @@ body {
     grid-column: 1 / -1;
   }
 }
+
+.character-presentation {
+  margin-bottom: 1rem;
+}
+
+.character-meta textarea {
+  resize: vertical;
+}
+
+.character-summary-card__portrait {
+  align-items: center;
+  background:
+    repeating-conic-gradient(rgba(61, 43, 31, 0.12) 0 25%, transparent 0 50%)
+      50% / 1rem 1rem,
+    linear-gradient(180deg, #fffaf0, #ead7a7);
+  border: 2px solid var(--rpg-border-strong);
+  border-radius: 0.75rem;
+  color: var(--rpg-border-strong);
+  display: grid;
+  flex: 0 0 5rem;
+  font-size: 2rem;
+  min-height: 5rem;
+  place-items: center;
+}
+
+.character-summary-card .tags {
+  gap: 0.25rem;
+}

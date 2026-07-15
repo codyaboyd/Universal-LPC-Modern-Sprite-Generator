@@ -7,6 +7,7 @@ import { Download } from "./download/Download.ts";
 import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
+import { CharacterPresentation } from "./CharacterPresentation.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { downloadAsPNG } from "../canvas/download.ts";
 import {
@@ -31,6 +32,7 @@ type AppState = {
   guidedMode: boolean;
   guidedStep: number;
   characterName: string;
+  prevPresentationFingerprint: string;
 };
 
 const LAST_CATEGORY_KEY = "ulpc:last-rpg-category";
@@ -487,6 +489,7 @@ export const App: m.Component<AppAttrs, AppState> = {
     vnode.state.guidedMode = true;
     vnode.state.guidedStep = 0;
     vnode.state.characterName = loadSavedGuidedCharacter()?.name ?? "";
+    vnode.state.prevPresentationFingerprint = `${vnode.state.prevSelections}:${vnode.state.prevBodyType}`;
   },
   onupdate(vnode) {
     // Only sync hash and render canvas if selections, bodyType, or custom image changed
@@ -510,6 +513,12 @@ export const App: m.Component<AppAttrs, AppState> = {
         });
       }
 
+      const presentationFingerprint = `${currentSelections}:${currentBodyType}`;
+      if (presentationFingerprint !== vnode.state.prevPresentationFingerprint) {
+        state.characterMetadata.modifiedAt = new Date().toISOString();
+        vnode.state.prevPresentationFingerprint = presentationFingerprint;
+      }
+
       // Update tracked state
       vnode.state.prevSelections = currentSelections;
       vnode.state.prevBodyType = currentBodyType;
@@ -524,7 +533,7 @@ export const App: m.Component<AppAttrs, AppState> = {
         m("h2.h4.mb-1", "Forge your hero"),
         m(
           "p.mb-0",
-          "Choose ancestry, gear, colors, and animation sheets without leaving the preview.",
+          "Choose technical asset-compatible bases, gear, colors, and animation sheets without leaving the preview.",
         ),
       ]),
       renderGuidedWorkflow(vnode.attrs.catalog, vnode.state),
@@ -572,6 +581,7 @@ export const App: m.Component<AppAttrs, AppState> = {
               ],
             ),
           ]),
+          m(CharacterPresentation),
           m(FiltersPanel, { catalog: vnode.attrs.catalog }),
           m("div.creator-advanced", [m(AdvancedTools)]),
         ]),
