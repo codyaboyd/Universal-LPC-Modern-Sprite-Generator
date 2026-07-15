@@ -7,6 +7,7 @@ import { drawRecolorPreview } from "../../canvas/palette-recolor.ts";
 import { getPaletteOptions } from "../../state/palettes.ts";
 import { PaletteSelectModal } from "./PaletteSelectModal.ts";
 import { COMPACT_FRAME_SIZE, FRAME_SIZE } from "../../state/constants.ts";
+import { normalizeAssetLabel } from "../../utils/helpers.ts";
 
 export type ItemWithRecolorsAttrs = {
   itemId: string;
@@ -46,7 +47,7 @@ export const ItemWithRecolors: m.Component<
     } = vnode.attrs;
     const rowTitle = showItemTooltips ? tooltipText : undefined;
     const compactDisplay = state.compactDisplay;
-    const displayName = meta.name;
+    const displayName = normalizeAssetLabel(meta.name || itemId);
     const rootViewNode = vnode;
     let nodePath = itemId;
     if (displayName === "Body Color") {

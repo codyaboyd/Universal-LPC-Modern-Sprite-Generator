@@ -35,6 +35,30 @@ export function ucwords(str: string): string {
     .join(" ");
 }
 
+export function normalizeAssetLabel(identifier: string): string {
+  const withoutPath = identifier.split(/[\\/]/).pop() ?? identifier;
+  const withoutExtension = withoutPath.replace(/\.[a-z0-9]+$/i, "");
+  const withoutLayerPrefix = withoutExtension.replace(/^\d{1,3}\s+/, "");
+  const spaced = withoutLayerPrefix
+    .replace(/[-_]+/g, " ")
+    .replace(/([a-z])([A-Z])/g, "$1 $2")
+    .replace(/\b(?:male|female|universal|lpc|ulpc|lpcr)\b/gi, (match) =>
+      match.length <= 4 ? match.toUpperCase() : match.toLowerCase(),
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (!spaced) return identifier;
+  return spaced
+    .split(" ")
+    .map((word) =>
+      /^[A-Z]{2,}$/.test(word)
+        ? word
+        : word.charAt(0).toUpperCase() + word.slice(1).toLowerCase(),
+    )
+    .join(" ");
+}
+
 export function matchesSearch(text: string, query: string): boolean {
   if (!query || query.length < 2) return true;
   return text.toLowerCase().includes(query.toLowerCase());

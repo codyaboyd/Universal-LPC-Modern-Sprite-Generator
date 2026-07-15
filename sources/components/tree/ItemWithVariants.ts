@@ -5,7 +5,7 @@ import { state, getSelectionGroup, selectItem } from "../../state/state.ts";
 import { getLayersToLoad } from "../../state/meta.ts";
 import type { LayerToLoad } from "../../state/meta.ts";
 import { COMPACT_FRAME_SIZE, FRAME_SIZE } from "../../state/constants.ts";
-import { capitalize } from "../../utils/helpers.ts";
+import { capitalize, normalizeAssetLabel } from "../../utils/helpers.ts";
 import type { CatalogReader, ItemMerged } from "../../state/catalog.ts";
 
 export type ItemWithVariantsAttrs = {
@@ -44,7 +44,7 @@ export const ItemWithVariants: m.Component<
     } = vnode.attrs;
     const rowTitle = showItemTooltips ? tooltipText : undefined;
     const compactDisplay = state.compactDisplay;
-    const displayName = meta.name;
+    const displayName = normalizeAssetLabel(meta.name || itemId);
     const rootViewNode = vnode;
     let nodePath = itemId;
     if (displayName === "Body Color") {
