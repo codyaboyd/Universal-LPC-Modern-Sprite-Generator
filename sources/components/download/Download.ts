@@ -59,6 +59,8 @@ const exportWorkflow = {
   isExporting: false,
   progress: "",
   error: "",
+  validationNonce: 0,
+  completionNonce: 0,
 };
 
 const formatLabels: Record<ExportFormat, string> = {
@@ -76,6 +78,7 @@ function safeFileName(
 ): string {
   const cleaned = name
     .trim()
+    // eslint-disable-next-line no-control-regex -- sanitize Windows-forbidden control characters from filenames.
     .replace(/[<>:"/\\|?*\x00-\x1F]/g, "-")
     .replace(/\s+/g, "-")
     .replace(/-+/g, "-")
@@ -255,6 +258,7 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
         )
       ) {
         exportWorkflow.error = "Resolve validation warnings before exporting.";
+        exportWorkflow.validationNonce += 1;
         return;
       }
       exportWorkflow.isExporting = true;
@@ -326,6 +330,7 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
           downloadBlob(blob, `${base}-package.zip`, "application/zip");
         }
         exportWorkflow.progress = "Export complete.";
+        exportWorkflow.completionNonce += 1;
       } catch (err) {
         console.error("Export failed:", err);
         exportWorkflow.error = `Export failed: ${(err as Error).message}`;
@@ -501,24 +506,40 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
           ),
         ]),
         warnings.length
-          ? m("div.notification.is-warning.is-light", [
-              m("strong", "Validation warnings"),
-              m(
-                "ul",
-                warnings.map((warning) => m("li", warning)),
-              ),
-            ])
+          ? m(
+              "div.notification.is-warning.is-light.rpg-anim-shake-error",
+              {
+                key: `warnings-${exportWorkflow.validationNonce}-${warnings.join("|")}`,
+              },
+              [
+                m("strong", "Validation warnings"),
+                m(
+                  "ul",
+                  warnings.map((warning) => m("li", warning)),
+                ),
+              ],
+            )
           : m(
-              "div.notification.is-success.is-light",
+              "div.notification.is-success.is-light.rpg-anim-fade-in",
               "Pre-export validation passed.",
             ),
         exportWorkflow.error
-          ? m("div.notification.is-danger.is-light", exportWorkflow.error)
+          ? m(
+              "div.notification.is-danger.is-light.rpg-anim-shake-error",
+              {
+                key: `error-${exportWorkflow.validationNonce}-${exportWorkflow.error}`,
+              },
+              exportWorkflow.error,
+            )
           : null,
         exportWorkflow.progress
           ? m(
-              "progress.progress.is-small.is-primary",
-              { max: 100, value: exportWorkflow.isExporting ? undefined : 100 },
+              "progress.progress.is-small.is-primary.rpg-anim-gold-shimmer",
+              {
+                key: `progress-${exportWorkflow.progress}-${exportWorkflow.completionNonce}`,
+                max: 100,
+                value: exportWorkflow.isExporting ? undefined : 100,
+              },
               exportWorkflow.progress,
             )
           : null,

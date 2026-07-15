@@ -35,6 +35,7 @@ type AppState = {
   guidedStep: number;
   characterName: string;
   prevPresentationFingerprint: string;
+  saveConfirmationNonce: number;
 };
 
 const LAST_CATEGORY_KEY = "ulpc:last-rpg-category";
@@ -193,7 +194,7 @@ function loadSavedGuidedCharacter(): SavedGuidedCharacter | null {
   }
 }
 
-function saveGuidedCharacter(name: string): void {
+function saveGuidedCharacter(name: string, local?: AppState): void {
   localStorage.setItem(
     GUIDED_SAVE_KEY,
     JSON.stringify({
@@ -202,6 +203,7 @@ function saveGuidedCharacter(name: string): void {
       savedAt: new Date().toISOString(),
     }),
   );
+  if (local) local.saveConfirmationNonce += 1;
 }
 
 async function startBlank(): Promise<void> {
@@ -412,11 +414,21 @@ function renderGuidedWorkflow(catalog: CatalogReader, local: AppState) {
                         {
                           type: "button",
                           onclick: () =>
-                            saveGuidedCharacter(local.characterName),
+                            saveGuidedCharacter(local.characterName, local),
                         },
                         "Save",
                       ),
                     ])
+                  : null,
+                active.action === "save" && local.saveConfirmationNonce > 0
+                  ? m(
+                      "div.alert.alert-success.py-2.rpg-anim-scale-in",
+                      {
+                        key: `save-${local.saveConfirmationNonce}`,
+                        role: "status",
+                      },
+                      "Saved to this browser.",
+                    )
                   : null,
                 active.action === "animations"
                   ? m(
@@ -492,6 +504,7 @@ export const App: m.Component<AppAttrs, AppState> = {
     vnode.state.guidedStep = 0;
     vnode.state.characterName = loadSavedGuidedCharacter()?.name ?? "";
     vnode.state.prevPresentationFingerprint = `${vnode.state.prevSelections}:${vnode.state.prevBodyType}`;
+    vnode.state.saveConfirmationNonce = 0;
   },
   onupdate(vnode) {
     // Only sync hash and render canvas if selections, bodyType, or custom image changed

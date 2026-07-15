@@ -34,6 +34,7 @@ type CategoryTreeState = {
   sortMode: SortMode;
   filterMode: FilterMode;
   guidedCategoryListener?: (event: Event) => void;
+  categoryChangeNonce: number;
 };
 
 const CATEGORY_DEFS = [
@@ -387,6 +388,7 @@ function renderTree(
                     : selected,
                 onclick: () => {
                   local.activeCategory = category.key;
+                  local.categoryChangeNonce += 1;
                   sessionStorage.setItem(LAST_CATEGORY_KEY, category.key);
                 },
               },
@@ -400,92 +402,96 @@ function renderTree(
         }),
       ),
       active
-        ? m("div.card.mb-3", [
-            m(
-              "div.card-header.d-flex.justify-content-between.align-items-center",
-              [
-                m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
-                m(
-                  "span.small.text-muted",
-                  `${categoryOptionCount(active, catalog, true)} options`,
-                ),
-              ],
-            ),
-            m("div.card-body", [
-              m("p.mb-2", [
-                m("strong", "Selected: "),
-                selectedSummary(active, catalog),
+        ? m(
+            "div.card.mb-3.rpg-anim-rise-in",
+            { key: `${active.key}:${local.categoryChangeNonce}` },
+            [
+              m(
+                "div.card-header.d-flex.justify-content-between.align-items-center",
+                [
+                  m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
+                  m(
+                    "span.small.text-muted",
+                    `${categoryOptionCount(active, catalog, true)} options`,
+                  ),
+                ],
+              ),
+              m("div.card-body", [
+                m("p.mb-2", [
+                  m("strong", "Selected: "),
+                  selectedSummary(active, catalog),
+                ]),
+                m("div.d-flex.flex-wrap.gap-2", [
+                  m("input.form-control.form-control-sm", {
+                    style: "max-width: 16rem",
+                    type: "search",
+                    placeholder: `Search ${active.label}`,
+                    value: state.searchQuery,
+                    disabled: !catalog.isLiteReady(),
+                    oninput: (e: Event) => {
+                      state.searchQuery = (e.target as HTMLInputElement).value;
+                    },
+                  }),
+                  m(
+                    "select.form-select.form-select-sm",
+                    {
+                      style: "max-width: 12rem",
+                      value: local.filterMode,
+                      onchange: (e: Event) => {
+                        local.filterMode = (e.target as HTMLSelectElement)
+                          .value as FilterMode;
+                      },
+                    },
+                    [
+                      m("option", { value: "all" }, "All options"),
+                      m("option", { value: "available" }, "Available now"),
+                      m("option", { value: "selected" }, "Selected categories"),
+                    ],
+                  ),
+                  m(
+                    "select.form-select.form-select-sm",
+                    {
+                      style: "max-width: 12rem",
+                      value: local.sortMode,
+                      onchange: (e: Event) => {
+                        local.sortMode = (e.target as HTMLSelectElement)
+                          .value as SortMode;
+                      },
+                    },
+                    [
+                      m("option", { value: "az" }, "Sort A–Z"),
+                      m("option", { value: "za" }, "Sort Z–A"),
+                      m("option", { value: "count" }, "Most options"),
+                    ],
+                  ),
+                  m(
+                    "button.btn.btn-outline-danger.btn-sm",
+                    {
+                      disabled: !hasSelected,
+                      onclick: () => {
+                        for (const group of selectedGroups)
+                          delete state.selections[group];
+                      },
+                    },
+                    "Unequip category",
+                  ),
+                ]),
               ]),
-              m("div.d-flex.flex-wrap.gap-2", [
-                m("input.form-control.form-control-sm", {
-                  style: "max-width: 16rem",
-                  type: "search",
-                  placeholder: `Search ${active.label}`,
-                  value: state.searchQuery,
-                  disabled: !catalog.isLiteReady(),
-                  oninput: (e: Event) => {
-                    state.searchQuery = (e.target as HTMLInputElement).value;
-                  },
-                }),
-                m(
-                  "select.form-select.form-select-sm",
-                  {
-                    style: "max-width: 12rem",
-                    value: local.filterMode,
-                    onchange: (e: Event) => {
-                      local.filterMode = (e.target as HTMLSelectElement)
-                        .value as FilterMode;
-                    },
-                  },
-                  [
-                    m("option", { value: "all" }, "All options"),
-                    m("option", { value: "available" }, "Available now"),
-                    m("option", { value: "selected" }, "Selected categories"),
-                  ],
-                ),
-                m(
-                  "select.form-select.form-select-sm",
-                  {
-                    style: "max-width: 12rem",
-                    value: local.sortMode,
-                    onchange: (e: Event) => {
-                      local.sortMode = (e.target as HTMLSelectElement)
-                        .value as SortMode;
-                    },
-                  },
-                  [
-                    m("option", { value: "az" }, "Sort A–Z"),
-                    m("option", { value: "za" }, "Sort Z–A"),
-                    m("option", { value: "count" }, "Most options"),
-                  ],
-                ),
-                m(
-                  "button.btn.btn-outline-danger.btn-sm",
-                  {
-                    disabled: !hasSelected,
-                    onclick: () => {
-                      for (const group of selectedGroups)
-                        delete state.selections[group];
-                    },
-                  },
-                  "Unequip category",
-                ),
-              ]),
-            ]),
-          ])
+            ],
+          )
         : m(
-            "div.alert.alert-info",
+            "div.alert.alert-info.rpg-anim-scale-in",
             "No RPG customization categories were found in the loaded metadata.",
           ),
       active && categoryOptionCount(active, catalog, true) === 0
         ? m(
-            "div.alert.alert-warning",
+            "div.alert.alert-warning.rpg-anim-shake-error",
             `${active.label} is unavailable for the current body type or filters.`,
           )
         : null,
       active && displayedNodes.length === 0
         ? m(
-            "div.alert.alert-secondary",
+            "div.alert.alert-secondary.rpg-anim-scale-in",
             `No ${active.label.toLowerCase()} options match the current search or filters.`,
           )
         : m(ItemBrowser, {
@@ -501,8 +507,10 @@ export const CategoryTree: m.Component<CategoryTreeAttrs, CategoryTreeState> = {
   oninit(vnode) {
     vnode.state.sortMode = "az";
     vnode.state.filterMode = "all";
+    vnode.state.categoryChangeNonce = 0;
     vnode.state.guidedCategoryListener = (event: Event) => {
       vnode.state.activeCategory = (event as CustomEvent<string>).detail;
+      vnode.state.categoryChangeNonce += 1;
       m.redraw();
     };
     window.addEventListener(
