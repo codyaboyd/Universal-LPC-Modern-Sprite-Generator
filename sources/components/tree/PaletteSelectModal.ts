@@ -33,6 +33,85 @@ type RootViewState = {
  */
 type RootViewRef = { state: RootViewState };
 
+const RECENT_COLORS_KEY = "ulpc.paletteEditor.recentColors";
+const FAVORITE_COLORS_KEY = "ulpc.paletteEditor.favoriteColors";
+
+type StoredColor = { key: string; label: string; colors: string[] };
+
+function storageAvailable(): boolean {
+  return (
+    typeof window !== "undefined" && typeof window.localStorage !== "undefined"
+  );
+}
+
+function readStoredColors(storageKey: string): StoredColor[] {
+  if (!storageAvailable()) return [];
+  try {
+    const parsed = JSON.parse(
+      window.localStorage.getItem(storageKey) ?? "[]",
+    ) as unknown;
+    if (!Array.isArray(parsed)) return [];
+    return parsed.filter((entry): entry is StoredColor => {
+      return (
+        typeof entry === "object" &&
+        entry !== null &&
+        typeof (entry as StoredColor).key === "string" &&
+        typeof (entry as StoredColor).label === "string" &&
+        Array.isArray((entry as StoredColor).colors)
+      );
+    });
+  } catch {
+    return [];
+  }
+}
+
+function writeStoredColors(storageKey: string, colors: StoredColor[]): void {
+  if (!storageAvailable()) return;
+  window.localStorage.setItem(storageKey, JSON.stringify(colors.slice(0, 12)));
+}
+
+function rememberRecentColor(color: StoredColor): void {
+  const recent = readStoredColors(RECENT_COLORS_KEY).filter(
+    (entry) => entry.key !== color.key,
+  );
+  writeStoredColors(RECENT_COLORS_KEY, [color, ...recent]);
+}
+
+function toggleFavoriteColor(color: StoredColor): boolean {
+  const favorites = readStoredColors(FAVORITE_COLORS_KEY);
+  const next = favorites.some((entry) => entry.key === color.key)
+    ? favorites.filter((entry) => entry.key !== color.key)
+    : [color, ...favorites];
+  writeStoredColors(FAVORITE_COLORS_KEY, next);
+  return next.some((entry) => entry.key === color.key);
+}
+
+function isFavoriteColor(key: string): boolean {
+  return readStoredColors(FAVORITE_COLORS_KEY).some(
+    (entry) => entry.key === key,
+  );
+}
+
+function colorName(label: string): string {
+  return ucwords(label.replaceAll("_", " "));
+}
+
+function renderPaletteStrip(colors: string[], label: string) {
+  return m(
+    "div.palette-swatch.rpg-palette-strip",
+    { role: "img", "aria-label": `${label} palette colors` },
+    colors
+      .slice()
+      .reverse()
+      .map((color, idx) =>
+        m("span", {
+          title: `${label} shade ${idx + 1}: ${color}`,
+          style: { backgroundColor: color },
+        }),
+      ),
+  );
+}
+
 export type PaletteSelectModalAttrs = {
   itemId: string;
   opt: PaletteOption;
@@ -148,11 +227,141 @@ function renderModal(
         "data-previews-ready": previewsReady ? "true" : "false",
       },
       [
-        m("header.is-flex", [
-          m("h4", opt.label),
-          m("button", { onclick: onClose }, "x"),
+        m("header.is-flex.rpg-palette-editor__header", [
+          m("div", [
+            m("h4", opt.label ?? "RPG palette editor"),
+            m("p.rpg-palette-editor__subtitle", [
+              "Safe palette swaps only. Source PNG assets are never modified.",
+            ]),
+          ]),
+          m(
+            "button.btn.btn-outline-secondary.btn-sm",
+            {
+              type: "button",
+              onclick: onClose,
+              "aria-label": "Close palette editor",
+            },
+            [m("i.bi.bi-x-lg", { "aria-hidden": "true" })],
+          ),
         ]),
-        m("section", [
+        m("section.rpg-palette-editor", [
+          m("div.alert.alert-info.py-2", { role: "status" }, [
+            m("i.bi.bi-info-circle.me-2", { "aria-hidden": "true" }),
+            "This asset supports curated palette swaps. Hex input and the browser color picker are disabled unless an asset provides a safe custom source palette.",
+          ]),
+          m("div", { class: "row g-2 mb-3" }, [
+            m("div.col-sm-6", [
+              m(
+                "label.form-label",
+                { for: `hex-${itemId}-${opt.idx}` },
+                "Hex color",
+              ),
+              m("input.form-control", {
+                id: `hex-${itemId}-${opt.idx}`,
+                type: "text",
+                placeholder: "Not supported for this asset",
+                disabled: true,
+                "aria-describedby": `hex-help-${itemId}-${opt.idx}`,
+              }),
+              m(
+                "div.form-text",
+                { id: `hex-help-${itemId}-${opt.idx}` },
+                "Arbitrary hex recoloring would be destructive or inaccurate for this palette asset.",
+              ),
+            ]),
+            m("div.col-sm-6", [
+              m(
+                "label.form-label",
+                { for: `picker-${itemId}-${opt.idx}` },
+                "Color picker",
+              ),
+              m("input.form-control form-control-color", {
+                id: `picker-${itemId}-${opt.idx}`,
+                type: "color",
+                value: "#808080",
+                disabled: true,
+                title: "Color picker is not supported by this asset",
+              }),
+              m("div.form-text", "Use curated compatible swatches below."),
+            ]),
+          ]),
+          m("div.d-flex.flex-wrap.gap-2.mb-3", [
+            m(
+              "button.btn.btn-outline-secondary.btn-sm",
+              { type: "button", onclick: () => onSelect("") },
+              [m("i.bi.bi-arrow-counterclockwise.me-1"), "Reset color"],
+            ),
+            m(
+              "button.btn.btn-outline-primary.btn-sm",
+              {
+                type: "button",
+                onclick: () => {
+                  const choices = opt.versions.flatMap((cat) => {
+                    const [material, version] = cat.split(".");
+                    const recolors =
+                      paletteMeta.materials[material]?.palettes?.[version] ??
+                      {};
+                    return Object.keys(recolors).map((palette) =>
+                      compilePaletteKey(material, version, palette, opt),
+                    );
+                  });
+                  const key =
+                    choices[Math.floor(Math.random() * choices.length)];
+                  if (key) onSelect(key);
+                },
+              },
+              [m("i.bi.bi-shuffle.me-1"), "Random compatible color"],
+            ),
+            opt.matchBodyColor
+              ? m("span.badge.text-bg-success.align-self-center", [
+                  m("i.bi.bi-link-45deg.me-1"),
+                  "Linked to body color",
+                ])
+              : m("span.badge.text-bg-secondary.align-self-center", [
+                  m("i.bi.bi-unlink.me-1"),
+                  "Independent color group",
+                ]),
+          ]),
+          m("div.rpg-palette-editor__memory.mb-3", [
+            m("h5", "Recent and favorite colors"),
+            m("div.d-flex.flex-wrap.gap-2", [
+              ...readStoredColors(FAVORITE_COLORS_KEY).map((entry) =>
+                m(
+                  "button.btn.btn-sm.rpg-memory-swatch",
+                  {
+                    type: "button",
+                    onclick: () => onSelect(entry.key),
+                    title: `Favorite: ${entry.label}`,
+                    "aria-label": `Select favorite color ${entry.label}`,
+                  },
+                  [
+                    renderPaletteStrip(entry.colors, entry.label),
+                    m("span", [m("i.bi.bi-star-fill.me-1"), entry.label]),
+                  ],
+                ),
+              ),
+              ...readStoredColors(RECENT_COLORS_KEY).map((entry) =>
+                m(
+                  "button.btn.btn-sm.rpg-memory-swatch",
+                  {
+                    type: "button",
+                    onclick: () => onSelect(entry.key),
+                    title: `Recent: ${entry.label}`,
+                    "aria-label": `Select recent color ${entry.label}`,
+                  },
+                  [
+                    renderPaletteStrip(entry.colors, entry.label),
+                    m("span", [m("i.bi.bi-clock-history.me-1"), entry.label]),
+                  ],
+                ),
+              ),
+              readStoredColors(FAVORITE_COLORS_KEY).length +
+                readStoredColors(RECENT_COLORS_KEY).length ===
+              0
+                ? m("span.text-muted", "No recent or favorite colors yet.")
+                : null,
+            ]),
+          ]),
           ...opt.versions.map((cat) => {
             const [material, version] = cat.split(".");
             const nodePath = `${itemId}-${opt.idx}-${cat}`;
@@ -194,7 +403,6 @@ function renderModal(
                 isExpanded
                   ? m("div.variants-container.is-flex.is-flex-wrap-wrap", [
                       ...Object.entries(recolors).map(([palette, colors]) => {
-                        const gradient = colors.slice().reverse();
                         const key = compilePaletteKey(
                           material,
                           version,
@@ -232,13 +440,29 @@ function renderModal(
                               },
                               onclick: (e: MouseEvent) => {
                                 e.stopPropagation();
+                                rememberRecentColor({
+                                  key,
+                                  label: colorName(palette),
+                                  colors,
+                                });
                                 onSelect(key);
                               },
+                              role: "button",
+                              tabindex: 0,
+                              "aria-label": `Select ${colorName(palette)} ${opt.label ?? "palette"}`,
+                              "aria-pressed": isSelected ? "true" : "false",
                             },
                             [
                               m(
                                 "span.variant-display-name.has-text-centered.is-size-7",
-                                ucwords(palette.replaceAll("_", " ")),
+                                [
+                                  isSelected
+                                    ? m("i.bi.bi-check-circle-fill.me-1", {
+                                        "aria-hidden": "true",
+                                      })
+                                    : null,
+                                  colorName(palette),
+                                ],
                               ),
                               m("canvas.variant-canvas.box.p-0", {
                                 width: compactDisplay
@@ -288,16 +512,38 @@ function renderModal(
                                   });
                                 },
                               }),
-                              m(
-                                "div.palette-swatch",
-                                gradient.map((color) =>
-                                  m("span", {
-                                    style: {
-                                      backgroundColor: color,
+                              m("div.rpg-palette-actions", [
+                                renderPaletteStrip(colors, colorName(palette)),
+                                m(
+                                  "button",
+                                  {
+                                    class: classNames(
+                                      "btn btn-sm",
+                                      isFavoriteColor(key)
+                                        ? "btn-warning"
+                                        : "btn-outline-secondary",
+                                    ),
+                                    type: "button",
+                                    onclick: (e: MouseEvent) => {
+                                      e.stopPropagation();
+                                      toggleFavoriteColor({
+                                        key,
+                                        label: colorName(palette),
+                                        colors,
+                                      });
                                     },
-                                  }),
+                                    "aria-label": `${isFavoriteColor(key) ? "Remove" : "Add"} ${colorName(palette)} favorite`,
+                                  },
+                                  [
+                                    m("i.bi", {
+                                      class: isFavoriteColor(key)
+                                        ? "bi-star-fill"
+                                        : "bi-star",
+                                      "aria-hidden": "true",
+                                    }),
+                                  ],
                                 ),
-                              ),
+                              ]),
                             ],
                           ),
                         ]);
