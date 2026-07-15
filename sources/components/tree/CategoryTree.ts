@@ -13,7 +13,7 @@ import type {
 } from "../../state/catalog.ts";
 import { renderResult } from "../../utils/render-result.ts";
 import { BodyTypeSelector } from "./BodyTypeSelector.ts";
-import { TreeNode } from "./TreeNode.ts";
+import { ItemBrowser } from "./ItemBrowser.ts";
 import { normalizeAssetLabel } from "../../utils/helpers.ts";
 
 const LAST_CATEGORY_KEY = "ulpc:last-rpg-category";
@@ -476,16 +476,11 @@ function renderTree(
           "div.alert.alert-secondary",
           `No ${active.label.toLowerCase()} options match the current search or filters.`,
         )
-      : m(
-          "div.list-group",
-          displayedNodes.map(({ name, node, pathPrefix }) =>
-            m(
-              "div.list-group-item",
-              { key: `${pathPrefix ?? ""}-${name}` },
-              m(TreeNode, { name, node, pathPrefix, catalog }),
-            ),
-          ),
-        ),
+      : m(ItemBrowser, {
+          nodes: displayedNodes,
+          catalog,
+          categoryLabel: active?.label ?? "Items",
+        }),
   ]);
 }
 
