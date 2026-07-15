@@ -70,6 +70,10 @@ import { initHashChangeListener } from "./state/hash.ts";
 
 // Import components
 import { App } from "./components/App.ts";
+import {
+  AmbientSettings,
+  initAmbientAtmosphere,
+} from "./ambient-atmosphere.ts";
 import { AnimationPreview } from "./components/preview/AnimationPreview.ts";
 import { FullSpritesheetPreview } from "./components/preview/FullSpritesheetPreview.ts";
 
@@ -126,6 +130,8 @@ let hashHydrationInitDone = false;
 
 // Wait for DOM to be ready, then mount UI; catalog may already be loading or ready.
 document.addEventListener("DOMContentLoaded", () => {
+  initAmbientAtmosphere();
+  m.mount(document.getElementById("ambient-settings-root")!, AmbientSettings);
   // Mount roots are static markup in index.html; assert non-null.
   // App is the composition root for catalog DI — services pass through via attrs.
   m.mount(document.getElementById("mithril-filters")!, {

@@ -7,6 +7,12 @@
     <title>Universal LPC Sprite Sheet Character Generator</title>
   </head>
   <body>
+    <div class="ambient-backdrop" aria-hidden="true">
+      <div class="ambient-parallax ambient-parallax--far"></div>
+      <div class="ambient-parallax ambient-parallax--mid"></div>
+      <div class="ambient-runes"></div>
+      <canvas id="ambient-particles"></canvas>
+    </div>
     <a class="skip-link btn btn-warning fw-semibold" href="#main-content"
       >Skip to sprite generator</a
     >
@@ -40,6 +46,7 @@
                 You must <a href="#credits-section">credit the authors</a>
               </p>
             </div>
+            <div id="ambient-settings-root"></div>
             <ul id="sponsors-links" class="nav small gap-2">
               <li class="nav-item">
                 <a class="nav-link px-0" href="https://www.netlify.com/"
