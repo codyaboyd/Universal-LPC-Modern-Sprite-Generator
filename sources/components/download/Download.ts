@@ -22,6 +22,7 @@ import {
 } from "../../state/zip.ts";
 import { debugLog } from "../../utils/debug.ts";
 import type { CatalogReader } from "../../state/catalog.ts";
+import { validateSelections } from "../../state/compatibility.ts";
 
 const zipExportTitle = "Wait for layer data to finish loading";
 
@@ -64,6 +65,16 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
       }
     };
 
+    const validationReports = validateSelections({
+      catalog: vnode.attrs.catalog,
+      bodyType: state.bodyType,
+      animation: state.selectedAnimation,
+      selections: state.selections,
+    });
+    const validationIssues = validationReports.flatMap(
+      (report) => report.issues,
+    );
+
     const saveAsPNG = () => {
       if (!window.canvasRenderer) return;
       downloadAsPNG("character-spritesheet.png");
@@ -76,6 +87,18 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
         defaultOpen: true,
       },
       [
+        validationIssues.length > 0
+          ? m("div.notification.is-warning.is-light.is-size-7", [
+              m("strong", "Validation summary before export"),
+              m(
+                "ul",
+                validationIssues.map((issue) => m("li", issue.message)),
+              ),
+            ])
+          : m(
+              "div.notification.is-success.is-light.is-size-7",
+              "Validation summary before export: no compatibility issues found.",
+            ),
         m("div.buttons.is-flex.is-flex-wrap-wrap", { id: "download-buttons" }, [
           m(
             "button.button.is-small.is-primary",

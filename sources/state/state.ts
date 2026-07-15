@@ -4,6 +4,7 @@ import { LICENSE_CONFIG, ANIMATIONS, BODY_TYPES } from "./constants.ts";
 import { syncSelectionsToHash, loadSelectionsFromHash } from "./hash.ts";
 import { defaultCatalog, getItemMerged, type ItemMerged } from "./catalog.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
+import { evaluateItemCompatibility } from "./compatibility.ts";
 
 /** A single item selection within a selection group (e.g. body, head, ears). */
 export type Selection = {
@@ -57,6 +58,7 @@ export type State = {
   applyTransparencyMask: boolean;
   matchBodyColorEnabled: boolean;
   compactDisplay: boolean;
+  showIncompatibleAssets: boolean;
   customUploadedImage: HTMLImageElement | null;
   customImageZPos: number;
   previewCanvasZoomLevel: number;
@@ -87,6 +89,8 @@ type StateDeps = {
   renderCharacter: (selections: Selections, bodyType: string) => Promise<void>;
   loadSelectionsFromHash: () => void;
   getCanvasRenderer: () => unknown;
+  confirm: (message: string) => boolean;
+  alert: (message: string) => void;
 };
 
 // Dependency injection for testability (see setStateDeps / resetStateDeps)
@@ -100,6 +104,8 @@ function createDefaultStateDeps(): StateDeps {
     loadSelectionsFromHash,
     getCanvasRenderer: () =>
       (window as unknown as { canvasRenderer?: unknown }).canvasRenderer,
+    confirm: (message) => window.confirm(message),
+    alert: (message) => window.alert(message),
   };
 }
 
@@ -142,6 +148,7 @@ export const state: State = {
   applyTransparencyMask: false,
   matchBodyColorEnabled: true,
   compactDisplay: false,
+  showIncompatibleAssets: false,
   customUploadedImage: null,
   customImageZPos: 0,
   previewCanvasZoomLevel: 1,
@@ -295,6 +302,39 @@ export function selectItem(
 
   const meta = stateDeps.getItemMetadata(itemId);
   if (!meta) return;
+
+  const report = evaluateItemCompatibility({
+    catalog: defaultCatalog,
+    itemId,
+    bodyType: state.bodyType,
+    animation: state.selectedAnimation,
+    selections: state.selections,
+    variant,
+  });
+
+  if (!report.compatible) {
+    const details = report.issues
+      .map((issue) => `• ${issue.message}`)
+      .join("\n");
+    stateDeps.alert(`Cannot equip ${meta.name}:\n${details}`);
+    return;
+  }
+
+  if (report.hiddenSelectionKeys.length > 0) {
+    const hiddenNames = report.hiddenSelectionKeys
+      .map((key) => state.selections[key]?.name ?? key)
+      .join(", ");
+    const substitutions = report.substitutions.length
+      ? `\nCompatible substitutions available: ${report.substitutions.join(", ")}`
+      : "";
+    const okToReplace = stateDeps.confirm(
+      `${meta.name} will hide or replace: ${hiddenNames}.${substitutions}\nContinue?`,
+    );
+    if (!okToReplace) return;
+    for (const key of report.hiddenSelectionKeys) {
+      delete state.selections[key];
+    }
+  }
 
   const useVariants = (meta.variants?.length ?? 0) > 0;
   const variantDisplayName = variant.replaceAll("_", " ");
