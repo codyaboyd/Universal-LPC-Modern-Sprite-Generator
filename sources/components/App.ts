@@ -63,11 +63,23 @@ export const App: m.Component<AppAttrs, AppState> = {
     }
   },
   view(vnode) {
-    return m("div", [
-      m(Download, { catalog: vnode.attrs.catalog }),
-      m(FiltersPanel, { catalog: vnode.attrs.catalog }),
-      m(Credits, { catalog: vnode.attrs.catalog }),
-      m(AdvancedTools),
+    return m("div.app-workspace", [
+      m("section.export-controls", { "aria-label": "Export controls" }, [
+        m(Download, { catalog: vnode.attrs.catalog }),
+      ]),
+      m(
+        "section.category-navigation",
+        { "aria-label": "Category navigation and filters" },
+        [m(FiltersPanel, { catalog: vnode.attrs.catalog })],
+      ),
+      m(
+        "section.character-summary",
+        { "aria-label": "Character credits and summary" },
+        [m(Credits, { catalog: vnode.attrs.catalog })],
+      ),
+      m("section.item-browser", { "aria-label": "Advanced item tools" }, [
+        m(AdvancedTools),
+      ]),
     ]);
   },
 };
