@@ -22,6 +22,7 @@ import {
   setPreviewCanvasZoom,
 } from "../../canvas/preview-canvas.ts";
 import { PreviewMetadataLoadingOverlay } from "./PreviewMetadataLoadingOverlay.ts";
+import { describeCharacter } from "../../utils/accessibility.ts";
 
 type PreviewCanvasAttrs = {
   selectedAnimation: string;
@@ -93,7 +94,8 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
   },
   view() {
     return m("canvas#previewAnimations.rpg-preview-stage__canvas", {
-      "aria-label": "Assembled LPC character preview",
+      "aria-label": "Assembled LPC character preview canvas",
+      "aria-describedby": "preview-character-summary",
     });
   },
 };
@@ -117,6 +119,8 @@ type AnimationPreviewState = {
   measuredFps: number;
   showRune: boolean;
   isPanning: boolean;
+  lastAnnouncedSummary: string;
+  liveSummary: string;
   panStartX: number;
   panStartY: number;
   scrollStartLeft: number;
@@ -194,6 +198,12 @@ export const AnimationPreview: m.Component<
     setPreviewVisible(true);
     vnode.state.showRune = true;
     vnode.state.isPanning = false;
+    vnode.state.lastAnnouncedSummary = "";
+    vnode.state.liveSummary = describeCharacter(
+      state.selections,
+      state.bodyType,
+      vnode.state.selectedAnimation,
+    );
     if (window.canvasRenderer) {
       const frames = setPreviewAnimation("walk");
       vnode.state.frameCycle = frames ? frames.join("-") : "";
@@ -223,289 +233,362 @@ export const AnimationPreview: m.Component<
       : vnode.state.background;
     const zoomPercent = `${Math.round(vnode.state.zoomLevel * 100)}%`;
     const canPan = vnode.state.zoomLevel > 1;
+    const characterSummary = describeCharacter(
+      state.selections,
+      state.bodyType,
+      vnode.state.selectedAnimation,
+    );
+    if (characterSummary !== vnode.state.lastAnnouncedSummary) {
+      vnode.state.liveSummary = characterSummary;
+      vnode.state.lastAnnouncedSummary = characterSummary;
+    }
 
-    return m("section.rpg-preview-stage", [
-      m(
-        "div.rpg-preview-stage__toolbar",
-        { "aria-label": "Preview stage toolbar" },
-        [
-          m(
-            "button.button.is-small",
-            {
-              type: "button",
-              onclick: () => setZoom(vnode, vnode.state.zoomLevel - 0.25),
-              title: "Zoom out",
-            },
-            [m("i.bi.bi-zoom-out", { "aria-hidden": true }), " Zoom out"],
-          ),
-          m("output.rpg-preview-stage__zoom", zoomPercent),
-          m(
-            "button.button.is-small",
-            {
-              type: "button",
-              onclick: () => setZoom(vnode, vnode.state.zoomLevel + 0.25),
-              title: "Zoom in",
-            },
-            [m("i.bi.bi-zoom-in", { "aria-hidden": true }), " Zoom in"],
-          ),
-          m(
-            "button.button.is-small",
-            { type: "button", onclick: () => fitToStage(vnode) },
-            "Fit",
-          ),
-          m(
-            "button.button.is-small",
-            {
-              type: "button",
-              class: vnode.state.showGrid ? "is-info" : "",
-              onclick: () => (vnode.state.showGrid = !vnode.state.showGrid),
-            },
-            "Grid",
-          ),
-          m("label.rpg-preview-stage__check", [
-            m("input[type=checkbox]", {
-              checked: vnode.state.transparentBackground,
-              onchange: (e: Event) =>
-                (vnode.state.transparentBackground = (
-                  e.target as HTMLInputElement
-                ).checked),
-            }),
-            " Transparent",
-          ]),
+    return m(
+      "section.rpg-preview-stage",
+      { "aria-labelledby": "preview-stage-heading" },
+      [
+        m("h2.sr-only", { id: "preview-stage-heading" }, "Sprite preview"),
+        m("p.sr-only", { id: "preview-character-summary" }, characterSummary),
+        m(
+          "div.sr-only",
+          { "aria-live": "polite", "aria-atomic": "true" },
+          vnode.state.liveSummary,
+        ),
+        m(
+          "div.rpg-preview-stage__toolbar",
+          { "aria-label": "Preview stage toolbar" },
+          [
+            m(
+              "button.button.is-small",
+              {
+                type: "button",
+                onclick: () => setZoom(vnode, vnode.state.zoomLevel - 0.25),
+                title: "Zoom out",
+              },
+              [m("i.bi.bi-zoom-out", { "aria-hidden": true }), " Zoom out"],
+            ),
+            m(
+              "output.rpg-preview-stage__zoom",
+              { "aria-label": "Current preview zoom" },
+              zoomPercent,
+            ),
+            m(
+              "button.button.is-small",
+              {
+                type: "button",
+                onclick: () => setZoom(vnode, vnode.state.zoomLevel + 0.25),
+                title: "Zoom in",
+              },
+              [m("i.bi.bi-zoom-in", { "aria-hidden": true }), " Zoom in"],
+            ),
+            m(
+              "button.button.is-small",
+              {
+                type: "button",
+                onclick: () => fitToStage(vnode),
+                "aria-label": "Fit sprite preview to stage",
+              },
+              "Fit",
+            ),
+            m(
+              "button.button.is-small",
+              {
+                type: "button",
+                class: vnode.state.showGrid ? "is-info" : "",
+                onclick: () => (vnode.state.showGrid = !vnode.state.showGrid),
+                "aria-pressed": vnode.state.showGrid ? "true" : "false",
+                "aria-label": `${vnode.state.showGrid ? "Hide" : "Show"} preview alignment grid`,
+              },
+              [vnode.state.showGrid ? "Hide grid" : "Show grid"],
+            ),
+            m("label.rpg-preview-stage__check", [
+              m("input[type=checkbox]", {
+                checked: vnode.state.transparentBackground,
+                onchange: (e: Event) =>
+                  (vnode.state.transparentBackground = (
+                    e.target as HTMLInputElement
+                  ).checked),
+              }),
+              " Transparent",
+            ]),
+            m("div.select.is-small", [
+              m(
+                "select",
+                {
+                  value: vnode.state.background,
+                  disabled: vnode.state.transparentBackground,
+                  onchange: (e: Event) =>
+                    (vnode.state.background = (e.target as HTMLSelectElement)
+                      .value as StageBackground),
+                },
+                BACKGROUNDS.map((bg) =>
+                  m("option", { value: bg.value }, bg.label),
+                ),
+              ),
+            ]),
+            m(
+              "button.button.is-small",
+              { type: "button", onclick: () => requestStageFullscreen() },
+              [m("i.bi.bi-fullscreen", { "aria-hidden": true }), " Fullscreen"],
+            ),
+          ],
+        ),
+        m("div.rpg-preview-stage__animation-row", [
+          m("label", { for: "preview-animation-select" }, "Animation"),
           m("div.select.is-small", [
             m(
               "select",
               {
-                value: vnode.state.background,
-                disabled: vnode.state.transparentBackground,
-                onchange: (e: Event) =>
-                  (vnode.state.background = (e.target as HTMLSelectElement)
-                    .value as StageBackground),
+                id: "preview-animation-select",
+                value: vnode.state.selectedAnimation,
+                onchange: (e: Event) => {
+                  const target = e.target as HTMLSelectElement;
+                  vnode.state.selectedAnimation = target.value;
+                  state.selectedAnimation = target.value;
+                  if (window.canvasRenderer) {
+                    const frames = setPreviewAnimation(target.value);
+                    vnode.state.frameCycle = frames ? frames.join("-") : "";
+                  }
+                },
               },
-              BACKGROUNDS.map((bg) =>
-                m("option", { value: bg.value }, bg.label),
+              allAnimations.map((anim) =>
+                m("option", { value: anim.value }, anim.label),
+              ),
+            ),
+          ]),
+          m("span.rpg-preview-stage__frames", vnode.state.frameCycle),
+          m("label", { for: "preview-direction-select" }, "Direction"),
+          m("div.select.is-small", [
+            m(
+              "select",
+              {
+                id: "preview-direction-select",
+                value: String(vnode.state.directionIndex),
+                onchange: (e: Event) => {
+                  vnode.state.directionIndex = Number(
+                    (e.target as HTMLSelectElement).value,
+                  );
+                  setPreviewDirection(vnode.state.directionIndex);
+                },
+              },
+              DIRECTIONS.map((dir, index) =>
+                m("option", { value: String(index) }, dir),
+              ),
+            ),
+          ]),
+          m("label", { for: "preview-speed-select" }, "Speed"),
+          m("div.select.is-small", [
+            m(
+              "select",
+              {
+                id: "preview-speed-select",
+                value: String(vnode.state.playbackFps),
+                onchange: (e: Event) => {
+                  vnode.state.playbackFps = Number(
+                    (e.target as HTMLSelectElement).value,
+                  );
+                  setPreviewPlaybackFps(vnode.state.playbackFps);
+                },
+              },
+              [4, 6, 8, 10, 12, 16, 24].map((fps) =>
+                m("option", { value: String(fps) }, `${fps} FPS`),
               ),
             ),
           ]),
           m(
             "button.button.is-small",
-            { type: "button", onclick: () => requestStageFullscreen() },
-            [m("i.bi.bi-fullscreen", { "aria-hidden": true }), " Fullscreen"],
-          ),
-        ],
-      ),
-      m("div.rpg-preview-stage__animation-row", [
-        m("label", "Animation"),
-        m("div.select.is-small", [
-          m(
-            "select",
             {
-              value: vnode.state.selectedAnimation,
-              onchange: (e: Event) => {
-                const target = e.target as HTMLSelectElement;
-                vnode.state.selectedAnimation = target.value;
-                state.selectedAnimation = target.value;
-                if (window.canvasRenderer) {
-                  const frames = setPreviewAnimation(target.value);
-                  vnode.state.frameCycle = frames ? frames.join("-") : "";
-                }
+              type: "button",
+              onclick: () => {
+                vnode.state.animationEnabled = true;
+                startPreviewAnimation();
               },
             },
-            allAnimations.map((anim) =>
-              m("option", { value: anim.value }, anim.label),
-            ),
+            "Play",
           ),
-        ]),
-        m("span.rpg-preview-stage__frames", vnode.state.frameCycle),
-        m("label", "Direction"),
-        m("div.select.is-small", [
           m(
-            "select",
+            "button.button.is-small",
             {
-              value: String(vnode.state.directionIndex),
-              onchange: (e: Event) => {
-                vnode.state.directionIndex = Number(
-                  (e.target as HTMLSelectElement).value,
-                );
-                setPreviewDirection(vnode.state.directionIndex);
+              type: "button",
+              onclick: () => {
+                vnode.state.animationEnabled = false;
+                stopPreviewAnimation();
               },
             },
-            DIRECTIONS.map((dir, index) =>
-              m("option", { value: String(index) }, dir),
-            ),
+            "Pause",
           ),
-        ]),
-        m("label", "Speed"),
-        m("div.select.is-small", [
           m(
-            "select",
+            "button.button.is-small",
             {
-              value: String(vnode.state.playbackFps),
-              onchange: (e: Event) => {
-                vnode.state.playbackFps = Number(
-                  (e.target as HTMLSelectElement).value,
-                );
-                setPreviewPlaybackFps(vnode.state.playbackFps);
+              type: "button",
+              onclick: () => {
+                vnode.state.animationEnabled = false;
+                vnode.state.currentFrameIndex = stepPreviewFrame(-1);
               },
             },
-            [4, 6, 8, 10, 12, 16, 24].map((fps) =>
-              m("option", { value: String(fps) }, `${fps} FPS`),
-            ),
+            "‹ Frame",
           ),
-        ]),
-        m(
-          "button.button.is-small",
-          {
-            type: "button",
-            onclick: () => {
-              vnode.state.animationEnabled = true;
-              startPreviewAnimation();
+          m(
+            "button.button.is-small",
+            {
+              type: "button",
+              onclick: () => {
+                vnode.state.animationEnabled = false;
+                vnode.state.currentFrameIndex = stepPreviewFrame(1);
+              },
             },
-          },
-          "Play",
-        ),
-        m(
-          "button.button.is-small",
-          {
-            type: "button",
-            onclick: () => {
+            "Frame ›",
+          ),
+          m("label.rpg-preview-stage__check", [
+            m("input[type=checkbox]", {
+              checked: vnode.state.loop,
+              onchange: (e: Event) => {
+                vnode.state.loop = (e.target as HTMLInputElement).checked;
+                setPreviewLoop(vnode.state.loop);
+              },
+            }),
+            " Loop",
+          ]),
+          m("input.rpg-preview-stage__timeline[type=range]", {
+            "aria-label": "Animation frame timeline",
+            min: 0,
+            max: Math.max(0, vnode.state.frameCount - 1),
+            value: vnode.state.currentFrameIndex,
+            oninput: (e: Event) => {
               vnode.state.animationEnabled = false;
-              stopPreviewAnimation();
-            },
-          },
-          "Pause",
-        ),
-        m(
-          "button.button.is-small",
-          {
-            type: "button",
-            onclick: () => {
-              vnode.state.animationEnabled = false;
-              vnode.state.currentFrameIndex = stepPreviewFrame(-1);
-            },
-          },
-          "‹ Frame",
-        ),
-        m(
-          "button.button.is-small",
-          {
-            type: "button",
-            onclick: () => {
-              vnode.state.animationEnabled = false;
-              vnode.state.currentFrameIndex = stepPreviewFrame(1);
-            },
-          },
-          "Frame ›",
-        ),
-        m("label.rpg-preview-stage__check", [
-          m("input[type=checkbox]", {
-            checked: vnode.state.loop,
-            onchange: (e: Event) => {
-              vnode.state.loop = (e.target as HTMLInputElement).checked;
-              setPreviewLoop(vnode.state.loop);
+              vnode.state.currentFrameIndex = scrubPreviewFrame(
+                Number((e.target as HTMLInputElement).value),
+              );
             },
           }),
-          " Loop",
+          m(
+            "span.rpg-preview-stage__frames",
+            `Frame ${vnode.state.currentFrameIndex + 1}/${vnode.state.frameCount} · ${vnode.state.measuredFps || 0} FPS`,
+          ),
         ]),
-        m("input.rpg-preview-stage__timeline[type=range]", {
-          min: 0,
-          max: Math.max(0, vnode.state.frameCount - 1),
-          value: vnode.state.currentFrameIndex,
-          oninput: (e: Event) => {
-            vnode.state.animationEnabled = false;
-            vnode.state.currentFrameIndex = scrubPreviewFrame(
-              Number((e.target as HTMLInputElement).value),
-            );
-          },
-        }),
         m(
-          "span.rpg-preview-stage__frames",
-          `Frame ${vnode.state.currentFrameIndex + 1}/${vnode.state.frameCount} · ${vnode.state.measuredFps || 0} FPS`,
+          "div",
+          {
+            class: `rpg-preview-stage__viewport rpg-preview-stage__viewport--${effectiveBackground} ${vnode.state.showGrid ? "rpg-preview-stage__viewport--grid" : ""} ${canPan ? "rpg-preview-stage__viewport--pannable" : ""} ${vnode.state.isPanning ? "is-panning" : ""}`,
+            onmousedown: (e: MouseEvent) => {
+              if (!canPan) return;
+              const el = e.currentTarget as HTMLElement;
+              vnode.state.isPanning = true;
+              vnode.state.panStartX = e.clientX;
+              vnode.state.panStartY = e.clientY;
+              vnode.state.scrollStartLeft = el.scrollLeft;
+              vnode.state.scrollStartTop = el.scrollTop;
+            },
+            onmousemove: (e: MouseEvent) => {
+              if (!vnode.state.isPanning) return;
+              const el = e.currentTarget as HTMLElement;
+              el.scrollLeft =
+                vnode.state.scrollStartLeft -
+                (e.clientX - vnode.state.panStartX);
+              el.scrollTop =
+                vnode.state.scrollStartTop -
+                (e.clientY - vnode.state.panStartY);
+            },
+            onmouseup: () => (vnode.state.isPanning = false),
+            onmouseleave: () => (vnode.state.isPanning = false),
+            tabindex: 0,
+            role: "region",
+            "aria-label":
+              "Sprite preview viewport. Use arrow keys to pan when zoomed, space to play or pause, comma and period to step frames.",
+            "aria-describedby": "preview-character-summary",
+            onkeydown: (e: KeyboardEvent) => {
+              const el = e.currentTarget as HTMLElement;
+              const panBy = 32;
+              if (e.key === " ") {
+                e.preventDefault();
+                vnode.state.animationEnabled = !vnode.state.animationEnabled;
+                if (vnode.state.animationEnabled) {
+                  startPreviewAnimation();
+                } else {
+                  stopPreviewAnimation();
+                }
+              } else if (e.key === ",") {
+                e.preventDefault();
+                vnode.state.animationEnabled = false;
+                vnode.state.currentFrameIndex = stepPreviewFrame(-1);
+              } else if (e.key === ".") {
+                e.preventDefault();
+                vnode.state.animationEnabled = false;
+                vnode.state.currentFrameIndex = stepPreviewFrame(1);
+              } else if (
+                canPan &&
+                ["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(
+                  e.key,
+                )
+              ) {
+                e.preventDefault();
+                if (e.key === "ArrowLeft") el.scrollLeft -= panBy;
+                if (e.key === "ArrowRight") el.scrollLeft += panBy;
+                if (e.key === "ArrowUp") el.scrollTop -= panBy;
+                if (e.key === "ArrowDown") el.scrollTop += panBy;
+              }
+            },
+          },
+          [
+            m("div.rpg-preview-stage__parallax", { "aria-hidden": true }, [
+              m("span.rpg-preview-stage__ray.rpg-preview-stage__ray--one"),
+              m("span.rpg-preview-stage__ray.rpg-preview-stage__ray--two"),
+              ...Array.from({ length: 10 }, (_, i) =>
+                m("span.rpg-preview-stage__particle", {
+                  class: `rpg-preview-stage__particle--${i + 1}`,
+                }),
+              ),
+              ...Array.from({ length: 6 }, (_, i) =>
+                m("span.rpg-preview-stage__mote", {
+                  class: `rpg-preview-stage__mote--${i + 1}`,
+                }),
+              ),
+            ]),
+            m("div.preview-canvas-root.rpg-preview-stage__character", [
+              vnode.state.showRune
+                ? m("div.rpg-preview-stage__rune", { "aria-hidden": true })
+                : null,
+              interactionFeedback.flashNonce
+                ? m("span.rpg-equip-flash", {
+                    key: interactionFeedback.flashNonce,
+                    class: `rpg-equip-flash--${interactionFeedback.flashRegion}`,
+                    "aria-hidden": true,
+                  })
+                : null,
+              m(PreviewCanvas, {
+                selectedAnimation: vnode.state.selectedAnimation,
+                zoomLevel: vnode.state.zoomLevel,
+                animationEnabled: vnode.state.animationEnabled,
+                directionIndex: vnode.state.directionIndex,
+                playbackFps: vnode.state.playbackFps,
+                loop: vnode.state.loop,
+                onFrameCycleUpdate: (frameCycle) =>
+                  (vnode.state.frameCycle = frameCycle),
+              }),
+              state.isRenderingCharacter
+                ? m("div.preview-canvas-busy", { "aria-live": "polite" }, [
+                    m("span.loading", { "aria-label": "Rendering character" }),
+                    m("span.ms-2", "Rendering character…"),
+                  ])
+                : null,
+              m(PreviewMetadataLoadingOverlay),
+            ]),
+          ],
         ),
-      ]),
-      m(
-        "div",
-        {
-          class: `rpg-preview-stage__viewport rpg-preview-stage__viewport--${effectiveBackground} ${vnode.state.showGrid ? "rpg-preview-stage__viewport--grid" : ""} ${canPan ? "rpg-preview-stage__viewport--pannable" : ""} ${vnode.state.isPanning ? "is-panning" : ""}`,
-          onmousedown: (e: MouseEvent) => {
-            if (!canPan) return;
-            const el = e.currentTarget as HTMLElement;
-            vnode.state.isPanning = true;
-            vnode.state.panStartX = e.clientX;
-            vnode.state.panStartY = e.clientY;
-            vnode.state.scrollStartLeft = el.scrollLeft;
-            vnode.state.scrollStartTop = el.scrollTop;
-          },
-          onmousemove: (e: MouseEvent) => {
-            if (!vnode.state.isPanning) return;
-            const el = e.currentTarget as HTMLElement;
-            el.scrollLeft =
-              vnode.state.scrollStartLeft - (e.clientX - vnode.state.panStartX);
-            el.scrollTop =
-              vnode.state.scrollStartTop - (e.clientY - vnode.state.panStartY);
-          },
-          onmouseup: () => (vnode.state.isPanning = false),
-          onmouseleave: () => (vnode.state.isPanning = false),
-        },
-        [
-          m("div.rpg-preview-stage__parallax", { "aria-hidden": true }, [
-            m("span.rpg-preview-stage__ray.rpg-preview-stage__ray--one"),
-            m("span.rpg-preview-stage__ray.rpg-preview-stage__ray--two"),
-            ...Array.from({ length: 10 }, (_, i) =>
-              m("span.rpg-preview-stage__particle", {
-                class: `rpg-preview-stage__particle--${i + 1}`,
-              }),
-            ),
-            ...Array.from({ length: 6 }, (_, i) =>
-              m("span.rpg-preview-stage__mote", {
-                class: `rpg-preview-stage__mote--${i + 1}`,
-              }),
-            ),
-          ]),
-          m("div.preview-canvas-root.rpg-preview-stage__character", [
-            vnode.state.showRune
-              ? m("div.rpg-preview-stage__rune", { "aria-hidden": true })
-              : null,
-            interactionFeedback.flashNonce
-              ? m("span.rpg-equip-flash", {
-                  key: interactionFeedback.flashNonce,
-                  class: `rpg-equip-flash--${interactionFeedback.flashRegion}`,
-                  "aria-hidden": true,
-                })
-              : null,
-            m(PreviewCanvas, {
-              selectedAnimation: vnode.state.selectedAnimation,
-              zoomLevel: vnode.state.zoomLevel,
-              animationEnabled: vnode.state.animationEnabled,
-              directionIndex: vnode.state.directionIndex,
-              playbackFps: vnode.state.playbackFps,
-              loop: vnode.state.loop,
-              onFrameCycleUpdate: (frameCycle) =>
-                (vnode.state.frameCycle = frameCycle),
-            }),
-            state.isRenderingCharacter
-              ? m("div.preview-canvas-busy", { "aria-live": "polite" }, [
-                  m("span.loading", { "aria-label": "Rendering character" }),
-                  m("span.ms-2", "Rendering character…"),
-                ])
-              : null,
-            m(PreviewMetadataLoadingOverlay),
-          ]),
-        ],
-      ),
-      state.assetLoadFailures.length
-        ? m("div.rpg-preview-stage__error", { role: "alert" }, [
-            m("strong", "Some sprite assets failed to load."),
-            m(
-              "ul",
-              state.assetLoadFailures.map((path) => m("li", path)),
-            ),
-          ])
-        : null,
-      m(
-        "p.rpg-preview-stage__note",
-        "Stage backgrounds and decorative effects are preview-only and are never included in exported sprite sheets.",
-      ),
-    ]);
+        state.assetLoadFailures.length
+          ? m("div.rpg-preview-stage__error", { role: "alert" }, [
+              m("strong", "Some sprite assets failed to load."),
+              m(
+                "ul",
+                state.assetLoadFailures.map((path) => m("li", path)),
+              ),
+            ])
+          : null,
+        m(
+          "p.rpg-preview-stage__note",
+          "Stage backgrounds and decorative effects are preview-only and are never included in exported sprite sheets.",
+        ),
+      ],
+    );
   },
 };

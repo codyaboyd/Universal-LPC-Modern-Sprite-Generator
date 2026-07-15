@@ -112,6 +112,16 @@ export const ItemWithRecolors: m.Component<
           "div.tree-label",
           {
             title: rowTitle,
+            role: "button",
+            tabindex: 0,
+            "aria-expanded": isExpanded ? "true" : "false",
+            "aria-label": `${isExpanded ? "Collapse" : "Expand"} ${displayName}`,
+            onkeydown: (e: KeyboardEvent) => {
+              if (e.key === "Enter" || e.key === " ") {
+                e.preventDefault();
+                (e.currentTarget as HTMLElement).click();
+              }
+            },
             onclick: () => {
               state.expandedNodes[nodePath] = !isExpanded;
             },
@@ -119,6 +129,7 @@ export const ItemWithRecolors: m.Component<
           [
             m("span.tree-arrow", {
               class: isExpanded ? "expanded" : "collapsed",
+              "aria-hidden": "true",
             }),
             m("span", displayName),
             !isCompatible ? m("span.ml-1", "⚠️") : null,
