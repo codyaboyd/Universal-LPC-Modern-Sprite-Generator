@@ -136,6 +136,7 @@ export function exportStateAsJSON(
   const exportedState = {
     version: 2,
     bodyType: state.bodyType,
+    characterMetadata: state.characterMetadata,
     selections: state.selections,
     selectedAnimation: state.selectedAnimation,
     showTransparencyGrid: state.showTransparencyGrid,
@@ -155,6 +156,7 @@ type ImportedV2 = {
   version: 2;
   bodyType: string;
   selections: Selections;
+  characterMetadata?: Partial<State["characterMetadata"]>;
   selectedAnimation?: string;
   showTransparencyGrid?: boolean;
   applyTransparencyMask?: boolean;
@@ -193,6 +195,10 @@ export function importStateFromJSON(
       const newState: Partial<State> = {
         bodyType: importedState.bodyType,
         selections: importedState.selections,
+        characterMetadata: {
+          ...state.characterMetadata,
+          ...importedState.characterMetadata,
+        },
         selectedAnimation:
           importedState.selectedAnimation ?? state.selectedAnimation,
         showTransparencyGrid:

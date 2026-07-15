@@ -23,11 +23,15 @@ export const BodyTypeSelector: m.Component<Record<string, never>, State> = {
           m("span.tree-arrow", {
             class: vnode.state.isExpanded ? "expanded" : "collapsed",
           }),
-          m("span.has-text-weight-semibold", "Body Type"),
+          m("span.has-text-weight-semibold", "Technical Body Type"),
         ],
       ),
       vnode.state.isExpanded
         ? m("div.ml-4.mt-2", [
+            m(
+              "p.is-size-7.has-text-grey.ml-4.mb-2",
+              "These labels reflect LPC asset compatibility slots, not character identity.",
+            ),
             m(
               "div.buttons.ml-4",
               BODY_TYPES.map((type) =>
