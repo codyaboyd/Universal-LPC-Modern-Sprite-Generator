@@ -1,9 +1,10 @@
 // Main app component
 import m from "mithril";
-import { state, resetAll, selectDefaults, selectItem } from "../state/state.ts";
+import { state, selectDefaults, selectItem } from "../state/state.ts";
 import { getHash, syncSelectionsToHash } from "../state/hash.ts";
 import type { CatalogReader, CategoryTreeNode } from "../state/catalog.ts";
 import { Download } from "./download/Download.ts";
+import { DiagnosticsPanel } from "./DiagnosticsPanel.ts";
 import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
@@ -12,6 +13,13 @@ import { CharacterPresentation } from "./CharacterPresentation.ts";
 import { PresetManager } from "./PresetManager.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { downloadAsPNG } from "../canvas/download.ts";
+import {
+  dismissAutosaveRecovery,
+  resilienceState,
+  safeReset,
+  writeAutosave,
+  reportUserError,
+} from "../resilience.ts";
 import {
   dismissToast,
   interactionFeedback,
@@ -209,6 +217,7 @@ function saveGuidedCharacter(name: string, local?: AppState): void {
 async function startBlank(): Promise<void> {
   state.selections = {};
   await selectDefaults();
+  writeAutosave();
 }
 
 function stepToCategoryKey(step: GuidedStep): string | null {
@@ -535,10 +544,18 @@ export const App: m.Component<AppAttrs, AppState> = {
       syncSelectionsToHash(vnode.attrs.catalog);
       if (window.canvasRenderer) {
         // Render to offscreen canvas (async)
-        renderCharacter(state.selections, state.bodyType).then(() => {
-          // Trigger redraw to update preview canvas after offscreen render completes
-          m.redraw();
-        });
+        renderCharacter(state.selections, state.bodyType)
+          .then(() => {
+            // Trigger redraw to update preview canvas after offscreen render completes
+            m.redraw();
+          })
+          .catch((error) => {
+            reportUserError(
+              "Rendering failed. Missing layers were skipped and your selections were kept.",
+              error,
+            );
+            m.redraw();
+          });
       }
 
       const presentationFingerprint = `${currentSelections}:${currentBodyType}`;
@@ -552,6 +569,7 @@ export const App: m.Component<AppAttrs, AppState> = {
       vnode.state.prevBodyType = currentBodyType;
       vnode.state.prevCustomImage = currentCustomImage;
       vnode.state.prevCustomZPos = currentCustomZPos;
+      writeAutosave();
     }
   },
   view(vnode) {
@@ -621,6 +639,23 @@ export const App: m.Component<AppAttrs, AppState> = {
         { "aria-label": "Character credits and summary" },
         [m(Credits, { catalog: vnode.attrs.catalog })],
       ),
+      resilienceState.recoveredAutosave
+        ? m("div.alert.alert-info", [
+            resilienceState.lastRecoveryMessage,
+            m(
+              "button.btn.btn-sm.btn-link",
+              {
+                type: "button",
+                onclick: () => {
+                  dismissAutosaveRecovery();
+                  m.redraw();
+                },
+              },
+              "Dismiss",
+            ),
+          ])
+        : null,
+      m(DiagnosticsPanel),
       interactionFeedback.toasts.length
         ? m(
             "div.rpg-feedback-toasts",
@@ -667,14 +702,23 @@ export const App: m.Component<AppAttrs, AppState> = {
           ),
           m(
             "button.btn.btn-outline-warning",
-            { type: "button", onclick: resetAll },
+            { type: "button", onclick: () => void safeReset() },
             [m("i.bi.bi-arrow-counterclockwise.me-1"), "Reset"],
           ),
           m(
             "button.btn.btn-warning",
             {
               type: "button",
-              onclick: () => downloadAsPNG("character-spritesheet.png"),
+              onclick: () =>
+                void downloadAsPNG("character-spritesheet.png").catch(
+                  (error) => {
+                    reportUserError(
+                      "Export failed. Please try again or copy diagnostics.",
+                      error,
+                    );
+                    m.redraw();
+                  },
+                ),
             },
             [m("i.bi.bi-download.me-1"), "Save PNG"],
           ),

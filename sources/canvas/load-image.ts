@@ -1,4 +1,5 @@
 import { debugWarn } from "../utils/debug.ts";
+import { reportUserError } from "../resilience.ts";
 
 let loadedImages: Record<string, HTMLImageElement> = {};
 /** In-flight loads: same `src` shares one `Image` and one profiler span. */
@@ -21,7 +22,14 @@ export function resetImageLoadCache(): void {
   inFlight.clear();
 }
 
-/** Load an image. Rejects with `Error("Failed to load <src>")` on error. */
+const MAX_IMAGE_LOAD_ATTEMPTS = 3;
+const IMAGE_LOAD_RETRY_DELAY_MS = 75;
+
+function delay(ms: number): Promise<void> {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
+}
+
+/** Load an image. Rejects with `Error("Failed to load <src>")` on error after retrying transient failures. */
 export function loadImage(
   src: string,
   signal?: AbortSignal,
@@ -56,6 +64,7 @@ export function loadImage(
     profiler.mark(`image-load:${src}:start`);
   }
 
+  let attempt = 1;
   const img = new Image();
   const cleanup = () => {
     img.onload = null;
@@ -70,7 +79,7 @@ export function loadImage(
   };
   signal?.addEventListener("abort", onAbort, { once: true });
   img.decoding = "async";
-  img.onload = () => {
+  const handleLoad = () => {
     const finish = () => {
       loadedImages[src] = img;
       inFlight.delete(src);
@@ -93,13 +102,36 @@ export function loadImage(
       finish();
     }
   };
-  img.onerror = () => {
-    cleanup();
-    inFlight.delete(src);
-    console.error(`Failed to load image: ${src}`);
-    reject(new Error(`Failed to load ${src}`));
+  const attachHandlers = () => {
+    signal?.addEventListener("abort", onAbort, { once: true });
+    img.onload = handleLoad;
+    img.onerror = handleError;
   };
-  img.src = src;
+  const setSrcForAttempt = () => {
+    img.src =
+      attempt === 1
+        ? src
+        : `${src}${src.includes("?") ? "&" : "?"}retry=${attempt}`;
+  };
+  function handleError() {
+    cleanup();
+    if (attempt < MAX_IMAGE_LOAD_ATTEMPTS && !signal?.aborted) {
+      attempt += 1;
+      void delay(IMAGE_LOAD_RETRY_DELAY_MS * attempt).then(() => {
+        attachHandlers();
+        setSrcForAttempt();
+      });
+      return;
+    }
+    inFlight.delete(src);
+    reportUserError(
+      "An image asset could not be loaded and was skipped.",
+      new Error(`Failed to load ${src}`),
+    );
+    reject(new Error(`Failed to load ${src}`));
+  }
+  attachHandlers();
+  setSrcForAttempt();
 
   return p;
 }

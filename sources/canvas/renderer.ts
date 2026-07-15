@@ -30,6 +30,7 @@ import {
 } from "../state/catalog.ts";
 import m from "mithril";
 import { debugWarn } from "../utils/debug.ts";
+import { reportUserError } from "../resilience.ts";
 import type { Selections } from "../state/state.ts";
 import type { ZipExportProfiler } from "../performance-profiler.ts";
 
@@ -285,7 +286,16 @@ async function runRenderCharacter(
         // Check if this layer exists
         const layerKey = `layer_${layerNum}`;
         const layer = meta.layers?.[layerKey];
-        if (!layer) break;
+        if (!layer) {
+          if (layerNum === 1) {
+            appState.assetLoadFailures.push(`missing-layer:${itemId}`);
+            reportUserError(
+              "An asset had no drawable layer and was skipped.",
+              itemId,
+            );
+          }
+          break;
+        }
 
         const zPos = getZPos(defaultCatalog, itemId, layerNum);
 

@@ -1,6 +1,7 @@
 import m from "mithril";
 import type { CatalogReader } from "../state/catalog.ts";
 import { downloadFile } from "../canvas/download.ts";
+import { reportUserError } from "../resilience.ts";
 import {
   applyPreset,
   deletePreset,
@@ -50,7 +51,18 @@ async function applyWithMessage(
   catalog: CatalogReader,
   local: Local,
 ): Promise<void> {
-  const result = await applyPreset(preset, catalog);
+  let result;
+  try {
+    result = await applyPreset(preset, catalog);
+  } catch (error) {
+    reportUserError(
+      "Preset could not be applied and the previous character was kept.",
+      error,
+    );
+    local.message =
+      "Preset could not be applied. The previous character was kept.";
+    return;
+  }
   const warnings = [
     ...result.missing.map((item) => `Missing: ${item}`),
     ...result.incompatible.map((item) => `Incompatible: ${item}`),
@@ -139,10 +151,9 @@ export const PresetManager: m.Component<Attrs, Local> = {
                       vnode.state.importText = "";
                       vnode.state.message = "Imported preset JSON.";
                     } catch (error) {
+                      reportUserError("Preset import failed.", error);
                       vnode.state.message =
-                        error instanceof Error
-                          ? error.message
-                          : "Import failed.";
+                        "Preset import failed. Check that the JSON came from this app and matches the current preset schema.";
                     }
                   },
                 },
@@ -166,8 +177,17 @@ export const PresetManager: m.Component<Attrs, Local> = {
                       ? m("img.card-img-top", {
                           src: preset.thumbnail,
                           alt: "Preset thumbnail",
+                          onerror: (event: Event) => {
+                            (event.target as HTMLImageElement).replaceWith(
+                              Object.assign(document.createElement("div"), {
+                                className:
+                                  "card-img-top bg-light text-center py-4",
+                                textContent: "Thumbnail unavailable",
+                              }),
+                            );
+                          },
                         })
-                      : m("div.card-img-top bg-light text-center py-4", [
+                      : m("div.card-img-top.bg-light.text-center.py-4", [
                           m("i.bi.bi-person-square.fs-1"),
                         ]),
                     m("div.card-body", [
