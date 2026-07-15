@@ -39,6 +39,8 @@
     "compute-style-diff-all:preview-ports": "node scripts/computed-style/computed-style-diff-all.js --url-a http://localhost:4176 --url-b http://localhost:4177"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
+    "bootstrap-icons": "^1.13.1",
     "bulma": "1.0.4",
     "classnames": "^2.5.1",
     "jszip": "^3.10.1",

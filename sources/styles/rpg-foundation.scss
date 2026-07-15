@@ -1,0 +1,144 @@
+:root {
+  color-scheme: light;
+  --rpg-surface-bg: #1b1721;
+  --rpg-surface-bg-soft: #272031;
+  --rpg-surface-panel: #fff8e7;
+  --rpg-surface-panel-muted: #f3e4c5;
+  --rpg-surface-parchment: #ead7a7;
+  --rpg-surface-parchment-ink: #3d2b1f;
+  --rpg-accent-gold: #d7a441;
+  --rpg-accent-gold-bright: #ffd166;
+  --rpg-rarity-common: #d8d8d8;
+  --rpg-rarity-uncommon: #5ecb73;
+  --rpg-rarity-rare: #4dabf7;
+  --rpg-rarity-epic: #b77dff;
+  --rpg-rarity-legendary: #ffb347;
+  --rpg-health-red: #c0392b;
+  --rpg-mana-blue: #2775d1;
+  --rpg-nature-green: #2f9e44;
+  --rpg-text-primary: #241a14;
+  --rpg-text-secondary: #5f5147;
+  --rpg-text-inverse: #fff8e7;
+  --rpg-text-link: #7048b7;
+  --rpg-border-subtle: rgba(61, 43, 31, 0.18);
+  --rpg-border-strong: #7a5730;
+  --rpg-border-gold: #b98a2e;
+  --rpg-shadow-sm: 0 2px 6px rgba(17, 12, 8, 0.18);
+  --rpg-shadow-md: 0 8px 24px rgba(17, 12, 8, 0.22);
+  --rpg-shadow-lg: 0 18px 48px rgba(17, 12, 8, 0.32);
+  --rpg-radius-sm: 0.25rem;
+  --rpg-radius-md: 0.5rem;
+  --rpg-radius-lg: 0.875rem;
+  --rpg-radius-pill: 999px;
+  --rpg-space-1: 0.25rem;
+  --rpg-space-2: 0.5rem;
+  --rpg-space-3: 0.75rem;
+  --rpg-space-4: 1rem;
+  --rpg-space-5: 1.5rem;
+  --rpg-space-6: 2rem;
+  --rpg-transition-fast: 120ms;
+  --rpg-transition-base: 180ms;
+  --rpg-transition-slow: 280ms;
+  --rpg-z-skip-link: 1100;
+  --rpg-z-app-bar: 1020;
+  --rpg-z-overlay: 1040;
+  --rpg-z-modal: 1055;
+  --bs-body-bg: var(--rpg-surface-bg);
+  --bs-body-color: var(--rpg-text-primary);
+  --bs-primary: #7048b7;
+  --bs-link-color: var(--rpg-text-link);
+  --bs-border-radius: var(--rpg-radius-md);
+  --bs-focus-ring-color: rgba(215, 164, 65, 0.45);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    scroll-behavior: auto !important;
+    transition-duration: 0.001ms !important;
+  }
+}
+
+body {
+  min-width: 320px;
+  background:
+    radial-gradient(
+      circle at top left,
+      rgba(215, 164, 65, 0.15),
+      transparent 32rem
+    ),
+    linear-gradient(135deg, var(--rpg-surface-bg), var(--rpg-surface-bg-soft));
+}
+
+:focus-visible {
+  outline: 3px solid var(--rpg-accent-gold-bright);
+  outline-offset: 3px;
+  box-shadow: 0 0 0 0.25rem rgba(215, 164, 65, 0.25);
+}
+
+.skip-link {
+  position: fixed;
+  top: var(--rpg-space-3);
+  left: var(--rpg-space-3);
+  z-index: var(--rpg-z-skip-link);
+  transform: translateY(calc(-100% - var(--rpg-space-4)));
+  transition: transform var(--rpg-transition-fast) ease;
+}
+.skip-link:focus {
+  transform: translateY(0);
+}
+
+.app-shell {
+  min-height: 100vh;
+}
+.app-topbar {
+  z-index: var(--rpg-z-app-bar);
+  background: rgba(255, 248, 231, 0.96);
+  border-bottom: 1px solid var(--rpg-border-gold);
+  box-shadow: var(--rpg-shadow-sm);
+  backdrop-filter: blur(10px);
+}
+.app-brand__mark {
+  color: var(--rpg-accent-gold);
+}
+.app-region {
+  scroll-margin-top: 5rem;
+}
+.app-panel {
+  background: var(--rpg-surface-panel);
+  border: 1px solid var(--rpg-border-subtle);
+  border-radius: var(--rpg-radius-lg);
+  box-shadow: var(--rpg-shadow-md);
+}
+.app-panel--parchment {
+  background: linear-gradient(
+    180deg,
+    var(--rpg-surface-panel),
+    var(--rpg-surface-parchment)
+  );
+}
+.app-region-title {
+  color: var(--rpg-surface-parchment-ink);
+  letter-spacing: 0.01em;
+}
+.app-stage {
+  position: sticky;
+  top: 5.5rem;
+}
+.app-workspace {
+  display: grid;
+  gap: var(--rpg-space-4);
+}
+.category-navigation,
+.item-browser,
+.character-summary,
+.export-controls {
+  min-width: 0;
+}

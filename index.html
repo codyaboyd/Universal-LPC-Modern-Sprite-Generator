@@ -1,42 +1,132 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en-us" data-theme="light">
-<head>
-	<meta charset="utf-8">
-	<meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1">
-	<title>Universal LPC Sprite Sheet Character Generator</title>
-</head>
-<body>
-	<section id="header-left" class="sticky">
-		<div class="is-flex is-align-items-center is-flex-wrap-wrap" style="gap: 1rem;">
-			<h1 class="title is-4 mb-0">
-				Universal LPC Spritesheet Generator
-				<a href="https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator" class="ml-2">
-					<img src="sources/github-mark.png" alt="View on GitHub" style="width:24px;height:24px;vertical-align:middle;">
-				</a>
-			</h1>
-			<span class="subtitle is-6 mb-0 has-text-grey">
-				Free/Libre pixel art from the <a href="https://lpc.opengameart.org">Liberated Pixel Cup</a>
-				<span class="mx-2">|</span>
-				You must <a href="#credits-section">credit the authors</a>
-			</span>
-			<span id="sponsors-links" class="subtitle is-6 mb-0">
-				<a href="https://www.netlify.com/">Site previews by Netlify</a>
-				<span class="mx-2">|</span>
-				<a href="https://argos-ci.com?utm_source=LiberatedPixelCup&utm_campaign=oss">Visual testing by Argos</a>
-			</span>
-		</div>
-	</section>
+  <head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=Edge,chrome=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Universal LPC Sprite Sheet Character Generator</title>
+  </head>
+  <body>
+    <a class="skip-link btn btn-warning fw-semibold" href="#main-content"
+      >Skip to sprite generator</a
+    >
+    <div class="app-shell">
+      <header id="header-left" class="app-topbar sticky-top" role="banner">
+        <nav class="container-fluid py-3" aria-label="Primary">
+          <div
+            class="d-flex align-items-center justify-content-between flex-wrap gap-3"
+          >
+            <div class="d-flex align-items-center flex-wrap gap-3">
+              <h1 class="app-brand h4 mb-0 d-flex align-items-center gap-2">
+                <i class="bi bi-stars app-brand__mark" aria-hidden="true"></i>
+                <span>Universal LPC Spritesheet Generator</span>
+                <a
+                  href="https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator"
+                  class="ms-1"
+                  aria-label="View Universal LPC Spritesheet Generator on GitHub"
+                >
+                  <img
+                    src="sources/github-mark.png"
+                    alt=""
+                    width="24"
+                    height="24"
+                  />
+                </a>
+              </h1>
+              <p class="mb-0 text-secondary small">
+                Free/Libre pixel art from the
+                <a href="https://lpc.opengameart.org">Liberated Pixel Cup</a>
+                <span class="mx-2" aria-hidden="true">|</span>
+                You must <a href="#credits-section">credit the authors</a>
+              </p>
+            </div>
+            <ul id="sponsors-links" class="nav small gap-2">
+              <li class="nav-item">
+                <a class="nav-link px-0" href="https://www.netlify.com/"
+                  >Site previews by Netlify</a
+                >
+              </li>
+              <li class="nav-item text-secondary" aria-hidden="true">|</li>
+              <li class="nav-item">
+                <a
+                  class="nav-link px-0"
+                  href="https://argos-ci.com?utm_source=LiberatedPixelCup&amp;utm_campaign=oss"
+                  >Visual testing by Argos</a
+                >
+              </li>
+            </ul>
+          </div>
+        </nav>
+      </header>
 
-	<div id="columns-container" class="columns is-desktop">
-		<div id="chooser-column" class="column">
-			<div id="mithril-filters" class="loading"></div>
-		</div>
+      <main id="main-content" class="container-fluid py-4" tabindex="-1">
+        <div id="columns-container" class="row g-4 align-items-start">
+          <section
+            id="preview-column"
+            class="col-12 col-xl-5 order-xl-2 app-region"
+            aria-labelledby="preview-stage-title"
+          >
+            <div class="app-stage app-workspace">
+              <div
+                class="app-panel app-panel--parchment p-3 character-preview-stage"
+              >
+                <h2 id="preview-stage-title" class="app-region-title h5 mb-3">
+                  <i
+                    class="bi bi-person-bounding-box me-2"
+                    aria-hidden="true"
+                  ></i
+                  >Character preview stage
+                </h2>
+                <div id="mithril-preview" class="loading"></div>
+              </div>
+              <div class="app-panel p-3 character-summary">
+                <h2 class="app-region-title h5 mb-3">
+                  <i class="bi bi-card-list me-2" aria-hidden="true"></i
+                  >Character summary
+                </h2>
+                <div id="mithril-spritesheet-preview" class="loading"></div>
+              </div>
+            </div>
+          </section>
 
-		<div id="preview-column" class="column">
-			<div id="mithril-preview" class="loading"></div>
-			<div id="mithril-spritesheet-preview" class="loading"></div>
-		</div>
-	</div>
-	<script type="module" src="sources/main.ts"></script>
-</body>
+          <section
+            id="chooser-column"
+            class="col-12 col-xl-7 order-xl-1 app-region customization-workspace"
+            aria-labelledby="workspace-title"
+          >
+            <div class="app-panel p-3 p-lg-4">
+              <h2 id="workspace-title" class="app-region-title h5 mb-3">
+                <i class="bi bi-sliders me-2" aria-hidden="true"></i
+                >Customization workspace
+              </h2>
+              <div class="row g-3">
+                <nav
+                  class="col-12 category-navigation"
+                  aria-label="Category navigation"
+                >
+                  <div class="visually-hidden">
+                    Category navigation is provided by the filters and category
+                    tree below.
+                  </div>
+                </nav>
+                <section class="col-12 item-browser" aria-label="Item browser">
+                  <div id="mithril-filters" class="loading"></div>
+                </section>
+                <section
+                  class="col-12 export-controls"
+                  aria-label="Export controls"
+                >
+                  <div class="visually-hidden">
+                    Export controls remain in the generator controls while the
+                    Bootstrap shell is introduced.
+                  </div>
+                </section>
+              </div>
+            </div>
+          </section>
+        </div>
+      </main>
+    </div>
+    <script type="module" src="sources/main.ts"></script>
+  </body>
 </html>
