@@ -14,6 +14,7 @@ import {
 } from "../../state/filters.ts";
 import {
   capitalize,
+  normalizeAssetLabel,
   matchesSearch,
   nodeHasMatches,
 } from "../../utils/helpers.ts";
@@ -52,7 +53,7 @@ function renderSkeletons(itemIds: string[]) {
 
 function renderItem(itemId: string, meta: ItemMerged, ctx: ItemListCtx) {
   const { isNodeAnimCompatible, searchQuery, catalog } = ctx;
-  const displayName = meta.name;
+  const displayName = normalizeAssetLabel(meta.name || itemId);
   const hasVariants = meta.variants && meta.variants.length > 0;
   const hasRecolors = !hasVariants && meta.recolors && meta.recolors.length > 0;
   const isSearchMatch =
