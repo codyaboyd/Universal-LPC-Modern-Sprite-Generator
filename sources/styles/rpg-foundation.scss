@@ -669,3 +669,58 @@ body {
     animation-iteration-count: 1;
   }
 }
+
+.guided-workflow {
+  overflow: hidden;
+}
+
+.guided-workflow .creator-kicker {
+  color: #7a5730;
+}
+
+.guided-steps {
+  gap: 0.35rem;
+  padding-bottom: 0.15rem;
+  scroll-snap-type: x proximity;
+}
+
+.guided-steps .nav-item {
+  scroll-snap-align: start;
+}
+
+.guided-steps .nav-link {
+  min-height: 44px;
+  border: 1px solid rgba(122, 87, 48, 0.22);
+  color: #4b3624;
+  background: rgba(255, 255, 255, 0.45);
+}
+
+.guided-steps .nav-link.active {
+  color: #241a14;
+  background: var(--rpg-accent-gold-bright);
+  border-color: var(--rpg-border-gold);
+}
+
+.guided-card {
+  border-color: rgba(122, 87, 48, 0.28);
+  background: linear-gradient(135deg, #fffaf0, #f3e4c5);
+}
+
+.guided-nav .btn,
+.guided-workflow > .d-flex .btn {
+  min-height: 44px;
+}
+
+@media (max-width: 575.98px) {
+  .guided-workflow > .d-flex .btn {
+    flex: 1 1 9.5rem;
+  }
+
+  .guided-nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guided-nav .btn-link {
+    grid-column: 1 / -1;
+  }
+}
