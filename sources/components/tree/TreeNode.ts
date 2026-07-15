@@ -12,6 +12,7 @@ import {
   isItemAnimationCompatible,
   isNodeAnimationCompatible,
 } from "../../state/filters.ts";
+import { evaluateItemCompatibility } from "../../state/compatibility.ts";
 import {
   capitalize,
   normalizeAssetLabel,
@@ -64,7 +65,15 @@ function renderItem(itemId: string, meta: ItemMerged, ctx: ItemListCtx) {
   const isLicenseCompatibleFlag = isItemLicenseCompatible(itemId, catalog);
   const isAnimCompatibleFlag =
     isItemAnimationCompatible(itemId, catalog) && isNodeAnimCompatible;
-  const isCompatible = isLicenseCompatibleFlag && isAnimCompatibleFlag;
+  const compatibility = evaluateItemCompatibility({
+    catalog,
+    itemId,
+    bodyType: state.bodyType,
+    animation: state.selectedAnimation,
+    selections: state.selections,
+  });
+  const isCompatible =
+    isLicenseCompatibleFlag && isAnimCompatibleFlag && compatibility.compatible;
 
   // Build tooltip text (license list needs credits chunk)
   let licensesText: string;
@@ -95,7 +104,8 @@ function renderItem(itemId: string, meta: ItemMerged, ctx: ItemListCtx) {
     const issues: string[] = [];
     if (!isLicenseCompatibleFlag) issues.push("licenses");
     if (!isAnimCompatibleFlag) issues.push("animations");
-    tooltipText = `⚠️ Incompatible with selected ${issues.join(" and ")}\n`;
+    issues.push(...compatibility.issues.map((issue) => issue.message));
+    tooltipText = `⚠️ Incompatible: ${issues.join("; ")}\n`;
   }
   tooltipText += `${licensesText}\n${animsText}`;
 
@@ -161,8 +171,24 @@ function renderItemList(itemIds: string[], ctx: ItemListCtx) {
       if (liteResult.isErr()) return false; // unknown id (stale URL etc.)
       const lite = liteResult.value;
       // Filter: Only show items compatible with current body type
-      if (!lite.required.includes(state.bodyType)) return false;
-      if (!isItemAnimationCompatible(itemId, catalog) || !isNodeAnimCompatible)
+      const compatibility = evaluateItemCompatibility({
+        catalog,
+        itemId,
+        bodyType: state.bodyType,
+        animation: state.selectedAnimation,
+        selections: state.selections,
+      });
+      if (!state.showIncompatibleAssets && !compatibility.compatible)
+        return false;
+      if (
+        !state.showIncompatibleAssets &&
+        !lite.required.includes(state.bodyType)
+      )
+        return false;
+      if (
+        !state.showIncompatibleAssets &&
+        (!isItemAnimationCompatible(itemId, catalog) || !isNodeAnimCompatible)
+      )
         return false;
       // Filter: Only show items matching search query
       if (
@@ -254,6 +280,18 @@ export const TreeNode: m.Component<TreeNodeAttrs> = {
       ),
       isExpanded
         ? m("div.ml-4", [
+            m("label.checkbox.is-size-7.mb-2", [
+              m("input", {
+                type: "checkbox",
+                checked: state.showIncompatibleAssets,
+                onchange: (e: Event) => {
+                  state.showIncompatibleAssets = (
+                    e.currentTarget as HTMLInputElement
+                  ).checked;
+                },
+              }),
+              " Show incompatible assets",
+            ]),
             // Render child categories
             Object.entries(node.children ?? {}).map(([childName, childNode]) =>
               m(TreeNode, {

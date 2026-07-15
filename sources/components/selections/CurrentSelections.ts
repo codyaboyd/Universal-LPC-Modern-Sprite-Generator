@@ -10,6 +10,7 @@ import {
   isItemLicenseCompatible,
   isItemAnimationCompatible,
 } from "../../state/filters.ts";
+import { evaluateItemCompatibility } from "../../state/compatibility.ts";
 
 type CurrentSelectionsAttrs = {
   catalog: CatalogReader;
@@ -49,7 +50,16 @@ export const CurrentSelections: m.Component<CurrentSelectionsAttrs> = {
             selection.itemId,
             catalog,
           );
-          const isCompatible = isLicenseCompatible && isAnimCompatible;
+          const compatibility = evaluateItemCompatibility({
+            catalog,
+            itemId: selection.itemId,
+            bodyType: state.bodyType,
+            animation: state.selectedAnimation,
+            selections: state.selections,
+            variant: selection.variant,
+          });
+          const isCompatible =
+            isLicenseCompatible && isAnimCompatible && compatibility.compatible;
           const metaResult = catalog.getItemMerged(selection.itemId);
           const meta = metaResult.isOk() ? metaResult.value : null;
 
@@ -78,7 +88,8 @@ export const CurrentSelections: m.Component<CurrentSelectionsAttrs> = {
             const issues: string[] = [];
             if (!isLicenseCompatible) issues.push("licenses");
             if (!isAnimCompatible) issues.push("animations");
-            tooltipText = `⚠️ Incompatible with selected ${issues.join(" and ")}\n`;
+            issues.push(...compatibility.issues.map((issue) => issue.message));
+            tooltipText = `⚠️ Incompatible: ${issues.join("; ")}\n`;
           }
           tooltipText += `${licensesText}\n${animsText}`;
 
