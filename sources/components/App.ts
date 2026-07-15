@@ -9,6 +9,7 @@ import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
 import { RandomizerPanel } from "./RandomizerPanel.ts";
 import { CharacterPresentation } from "./CharacterPresentation.ts";
+import { PresetManager } from "./PresetManager.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { downloadAsPNG } from "../canvas/download.ts";
 import {
@@ -584,6 +585,7 @@ export const App: m.Component<AppAttrs, AppState> = {
             ),
           ]),
           m(CharacterPresentation),
+          m(PresetManager, { catalog: vnode.attrs.catalog }),
           m(FiltersPanel, { catalog: vnode.attrs.catalog }),
           m("div.creator-advanced", [m(AdvancedTools)]),
         ]),
