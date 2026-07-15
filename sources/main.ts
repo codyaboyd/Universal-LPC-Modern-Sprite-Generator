@@ -6,6 +6,7 @@ import "./vendor-globals.ts";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import { catalogReady, defaultCatalog } from "./state/catalog.ts";
+import { installGlobalErrorHandlers, installUnsavedChangeWarning, recoverAutosaveIfPresent, reportUserError } from "./resilience.ts";
 
 // Import debug first so `window.DEBUG` is set before other modules run.
 import { debugLog, getDebugParam } from "./utils/debug.ts";
@@ -82,6 +83,9 @@ import { PerformanceProfiler } from "./performance-profiler.ts";
 
 // DEBUG mode will be turned on if on localhost and off in production
 // but this can be overridden by adding debug=(true|false) to the querystring.
+installGlobalErrorHandlers();
+installUnsavedChangeWarning();
+
 export const DEBUG = getDebugParam();
 
 // Initialize performance profiler (uses same DEBUG flag as console logging)
@@ -135,7 +139,17 @@ document.addEventListener("DOMContentLoaded", () => {
   // Mount roots are static markup in index.html; assert non-null.
   // App is the composition root for catalog DI — services pass through via attrs.
   m.mount(document.getElementById("mithril-filters")!, {
-    view: () => m(App, { catalog: defaultCatalog }),
+    view: () => {
+      try {
+        return m(App, { catalog: defaultCatalog });
+      } catch (error) {
+        reportUserError("The controls could not be drawn. Use diagnostics or reset to recover.", error);
+        return m("section.app-panel.p-3", [
+          m("h2.h5", "The app hit a recoverable display problem"),
+          m("p", "Please try resetting or reloading. Diagnostics are available below for support."),
+        ]);
+      }
+    },
   });
   m.mount(document.getElementById("mithril-preview")!, AnimationPreview);
   m.mount(
@@ -157,8 +171,10 @@ document.addEventListener("DOMContentLoaded", () => {
     // Before first render: overlay uses this; during render, `isRenderingCharacter` hides overlay.
     state.previewBootstrapRenderDone = true;
 
-    if (window.setDefaultSelections) {
+    if (!recoverAutosaveIfPresent() && window.setDefaultSelections) {
       await window.setDefaultSelections();
+    } else if (Object.keys(state.selections).length > 0) {
+      await canvasRenderer.renderCharacter(state.selections, state.bodyType);
     }
 
     m.redraw();

@@ -1,6 +1,7 @@
 import type { ResultAsync } from "neverthrow";
 import { canvasToBlob } from "./canvas-utils.ts";
 import { getCanvas, type CanvasNotInitialized } from "./renderer.ts";
+import { reportUserError } from "../resilience.ts";
 
 type GetCanvasBlobFn = () => ResultAsync<Blob, CanvasNotInitialized>;
 
@@ -14,8 +15,11 @@ export async function downloadAsPNG(
 ): Promise<void> {
   const blobResult = await getCanvasBlobFunc();
   if (blobResult.isErr()) {
-    console.error("Error downloading PNG:", blobResult.error);
-    return;
+    reportUserError(
+      "Export failed because the canvas was not ready.",
+      blobResult.error.kind,
+    );
+    throw new Error("Canvas was not ready for export.");
   }
   const url = URL.createObjectURL(blobResult.value);
   const a = document.createElement("a");
