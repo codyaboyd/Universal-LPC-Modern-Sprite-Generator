@@ -33,6 +33,7 @@ type CategoryTreeState = {
   activeCategory?: string;
   sortMode: SortMode;
   filterMode: FilterMode;
+  guidedCategoryListener?: (event: Event) => void;
 };
 
 const CATEGORY_DEFS = [
@@ -270,17 +271,21 @@ function selectedSummary(
 }
 
 function renderLoadingHost() {
-  return m("div.box.has-background-light.category-tree-panel", [
-    m("div.category-tree-loading-host", [
-      m(
-        "div.category-tree-loading-overlay",
-        { "aria-busy": "true", "aria-live": "polite" },
-        m("span.loading", { "aria-label": "Loading category index" }),
-      ),
-      m("h3.title.is-5.mb-3", "RPG Customization"),
-      m("p.has-text-grey.is-size-7", "Loading customization categories…"),
-    ]),
-  ]);
+  return m(
+    "div.box.has-background-light.category-tree-panel",
+    { id: "category-tree-panel" },
+    [
+      m("div.category-tree-loading-host", [
+        m(
+          "div.category-tree-loading-overlay",
+          { "aria-busy": "true", "aria-live": "polite" },
+          m("span.loading", { "aria-label": "Loading category index" }),
+        ),
+        m("h3.title.is-5.mb-3", "RPG Customization"),
+        m("p.has-text-grey.is-size-7", "Loading customization categories…"),
+      ]),
+    ],
+  );
 }
 
 function renderTree(
@@ -318,176 +323,200 @@ function renderTree(
     selectedGroups.has(group),
   );
 
-  return m("div.box.has-background-light.category-tree-panel", [
-    m("div.d-flex.justify-content-between.align-items-center.mb-3", [
-      m("div", [
-        m("h3.title.is-5.mb-0", "RPG Customization"),
-        active
-          ? m("nav.small.text-muted", `Customize / ${active.label}`)
-          : null,
-      ]),
-      m("button.button.is-danger.is-small", { onclick: resetAll }, "Reset all"),
-    ]),
-    m("div.mb-3", [m(BodyTypeSelector)]),
-    m("div.mb-3", [
-      m("label.checkbox", [
-        m("input[type=checkbox]", {
-          checked: state.matchBodyColorEnabled,
-          onchange: (e: Event) => {
-            state.matchBodyColorEnabled = (
-              e.target as HTMLInputElement
-            ).checked;
-            if (state.matchBodyColorEnabled) {
-              const bodySelection =
-                state.selections[getSelectionGroup("body-body")];
-              if (bodySelection?.variant)
-                applyMatchBodyColor(
-                  bodySelection.variant,
-                  bodySelection.recolor ?? bodySelection.variant,
-                );
-            }
-          },
-        }),
-        " Match body color",
-      ]),
-    ]),
-    m(
-      "ul.nav.nav-pills.flex-nowrap.overflow-auto.mb-3",
-      sorted.map((category) => {
-        const available = categoryOptionCount(category, catalog, true);
-        const selected = selectedSummary(category, catalog);
-        return m(
-          "li.nav-item",
-          { key: category.key },
-          m(
-            "button.nav-link.text-nowrap",
-            {
-              class:
-                category.key === active?.key
-                  ? "active"
-                  : available === 0
-                    ? "disabled"
-                    : "",
-              disabled: available === 0,
-              title:
-                available === 0
-                  ? "Unavailable for the current body type or filters"
-                  : selected,
-              onclick: () => {
-                local.activeCategory = category.key;
-                sessionStorage.setItem(LAST_CATEGORY_KEY, category.key);
-              },
-            },
-            [
-              m(`i.bi.${category.icon}.me-1`),
-              category.label,
-              m("span.badge.text-bg-light.ms-2", String(available)),
-            ],
-          ),
-        );
-      }),
-    ),
-    active
-      ? m("div.card.mb-3", [
-          m(
-            "div.card-header.d-flex.justify-content-between.align-items-center",
-            [
-              m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
-              m(
-                "span.small.text-muted",
-                `${categoryOptionCount(active, catalog, true)} options`,
-              ),
-            ],
-          ),
-          m("div.card-body", [
-            m("p.mb-2", [
-              m("strong", "Selected: "),
-              selectedSummary(active, catalog),
-            ]),
-            m("div.d-flex.flex-wrap.gap-2", [
-              m("input.form-control.form-control-sm", {
-                style: "max-width: 16rem",
-                type: "search",
-                placeholder: `Search ${active.label}`,
-                value: state.searchQuery,
-                disabled: !catalog.isLiteReady(),
-                oninput: (e: Event) => {
-                  state.searchQuery = (e.target as HTMLInputElement).value;
-                },
-              }),
-              m(
-                "select.form-select.form-select-sm",
-                {
-                  style: "max-width: 12rem",
-                  value: local.filterMode,
-                  onchange: (e: Event) => {
-                    local.filterMode = (e.target as HTMLSelectElement)
-                      .value as FilterMode;
-                  },
-                },
-                [
-                  m("option", { value: "all" }, "All options"),
-                  m("option", { value: "available" }, "Available now"),
-                  m("option", { value: "selected" }, "Selected categories"),
-                ],
-              ),
-              m(
-                "select.form-select.form-select-sm",
-                {
-                  style: "max-width: 12rem",
-                  value: local.sortMode,
-                  onchange: (e: Event) => {
-                    local.sortMode = (e.target as HTMLSelectElement)
-                      .value as SortMode;
-                  },
-                },
-                [
-                  m("option", { value: "az" }, "Sort A–Z"),
-                  m("option", { value: "za" }, "Sort Z–A"),
-                  m("option", { value: "count" }, "Most options"),
-                ],
-              ),
-              m(
-                "button.btn.btn-outline-danger.btn-sm",
-                {
-                  disabled: !hasSelected,
-                  onclick: () => {
-                    for (const group of selectedGroups)
-                      delete state.selections[group];
-                  },
-                },
-                "Unequip category",
-              ),
-            ]),
-          ]),
-        ])
-      : m(
-          "div.alert.alert-info",
-          "No RPG customization categories were found in the loaded metadata.",
+  return m(
+    "div.box.has-background-light.category-tree-panel",
+    { id: "category-tree-panel" },
+    [
+      m("div.d-flex.justify-content-between.align-items-center.mb-3", [
+        m("div", [
+          m("h3.title.is-5.mb-0", "RPG Customization"),
+          active
+            ? m("nav.small.text-muted", `Customize / ${active.label}`)
+            : null,
+        ]),
+        m(
+          "button.button.is-danger.is-small",
+          { onclick: resetAll },
+          "Reset all",
         ),
-    active && categoryOptionCount(active, catalog, true) === 0
-      ? m(
-          "div.alert.alert-warning",
-          `${active.label} is unavailable for the current body type or filters.`,
-        )
-      : null,
-    active && displayedNodes.length === 0
-      ? m(
-          "div.alert.alert-secondary",
-          `No ${active.label.toLowerCase()} options match the current search or filters.`,
-        )
-      : m(ItemBrowser, {
-          nodes: displayedNodes,
-          catalog,
-          categoryLabel: active?.label ?? "Items",
+      ]),
+      m("div.mb-3", [m(BodyTypeSelector)]),
+      m("div.mb-3", [
+        m("label.checkbox", [
+          m("input[type=checkbox]", {
+            checked: state.matchBodyColorEnabled,
+            onchange: (e: Event) => {
+              state.matchBodyColorEnabled = (
+                e.target as HTMLInputElement
+              ).checked;
+              if (state.matchBodyColorEnabled) {
+                const bodySelection =
+                  state.selections[getSelectionGroup("body-body")];
+                if (bodySelection?.variant)
+                  applyMatchBodyColor(
+                    bodySelection.variant,
+                    bodySelection.recolor ?? bodySelection.variant,
+                  );
+              }
+            },
+          }),
+          " Match body color",
+        ]),
+      ]),
+      m(
+        "ul.nav.nav-pills.flex-nowrap.overflow-auto.mb-3",
+        sorted.map((category) => {
+          const available = categoryOptionCount(category, catalog, true);
+          const selected = selectedSummary(category, catalog);
+          return m(
+            "li.nav-item",
+            { key: category.key },
+            m(
+              "button.nav-link.text-nowrap",
+              {
+                class:
+                  category.key === active?.key
+                    ? "active"
+                    : available === 0
+                      ? "disabled"
+                      : "",
+                disabled: available === 0,
+                title:
+                  available === 0
+                    ? "Unavailable for the current body type or filters"
+                    : selected,
+                onclick: () => {
+                  local.activeCategory = category.key;
+                  sessionStorage.setItem(LAST_CATEGORY_KEY, category.key);
+                },
+              },
+              [
+                m(`i.bi.${category.icon}.me-1`),
+                category.label,
+                m("span.badge.text-bg-light.ms-2", String(available)),
+              ],
+            ),
+          );
         }),
-  ]);
+      ),
+      active
+        ? m("div.card.mb-3", [
+            m(
+              "div.card-header.d-flex.justify-content-between.align-items-center",
+              [
+                m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
+                m(
+                  "span.small.text-muted",
+                  `${categoryOptionCount(active, catalog, true)} options`,
+                ),
+              ],
+            ),
+            m("div.card-body", [
+              m("p.mb-2", [
+                m("strong", "Selected: "),
+                selectedSummary(active, catalog),
+              ]),
+              m("div.d-flex.flex-wrap.gap-2", [
+                m("input.form-control.form-control-sm", {
+                  style: "max-width: 16rem",
+                  type: "search",
+                  placeholder: `Search ${active.label}`,
+                  value: state.searchQuery,
+                  disabled: !catalog.isLiteReady(),
+                  oninput: (e: Event) => {
+                    state.searchQuery = (e.target as HTMLInputElement).value;
+                  },
+                }),
+                m(
+                  "select.form-select.form-select-sm",
+                  {
+                    style: "max-width: 12rem",
+                    value: local.filterMode,
+                    onchange: (e: Event) => {
+                      local.filterMode = (e.target as HTMLSelectElement)
+                        .value as FilterMode;
+                    },
+                  },
+                  [
+                    m("option", { value: "all" }, "All options"),
+                    m("option", { value: "available" }, "Available now"),
+                    m("option", { value: "selected" }, "Selected categories"),
+                  ],
+                ),
+                m(
+                  "select.form-select.form-select-sm",
+                  {
+                    style: "max-width: 12rem",
+                    value: local.sortMode,
+                    onchange: (e: Event) => {
+                      local.sortMode = (e.target as HTMLSelectElement)
+                        .value as SortMode;
+                    },
+                  },
+                  [
+                    m("option", { value: "az" }, "Sort A–Z"),
+                    m("option", { value: "za" }, "Sort Z–A"),
+                    m("option", { value: "count" }, "Most options"),
+                  ],
+                ),
+                m(
+                  "button.btn.btn-outline-danger.btn-sm",
+                  {
+                    disabled: !hasSelected,
+                    onclick: () => {
+                      for (const group of selectedGroups)
+                        delete state.selections[group];
+                    },
+                  },
+                  "Unequip category",
+                ),
+              ]),
+            ]),
+          ])
+        : m(
+            "div.alert.alert-info",
+            "No RPG customization categories were found in the loaded metadata.",
+          ),
+      active && categoryOptionCount(active, catalog, true) === 0
+        ? m(
+            "div.alert.alert-warning",
+            `${active.label} is unavailable for the current body type or filters.`,
+          )
+        : null,
+      active && displayedNodes.length === 0
+        ? m(
+            "div.alert.alert-secondary",
+            `No ${active.label.toLowerCase()} options match the current search or filters.`,
+          )
+        : m(ItemBrowser, {
+            nodes: displayedNodes,
+            catalog,
+            categoryLabel: active?.label ?? "Items",
+          }),
+    ],
+  );
 }
 
 export const CategoryTree: m.Component<CategoryTreeAttrs, CategoryTreeState> = {
   oninit(vnode) {
     vnode.state.sortMode = "az";
     vnode.state.filterMode = "all";
+    vnode.state.guidedCategoryListener = (event: Event) => {
+      vnode.state.activeCategory = (event as CustomEvent<string>).detail;
+      m.redraw();
+    };
+    window.addEventListener(
+      "ulpc:guided-category",
+      vnode.state.guidedCategoryListener,
+    );
+  },
+  onremove(vnode) {
+    if (vnode.state.guidedCategoryListener) {
+      window.removeEventListener(
+        "ulpc:guided-category",
+        vnode.state.guidedCategoryListener,
+      );
+    }
   },
   view(vnode) {
     const { catalog } = vnode.attrs;
