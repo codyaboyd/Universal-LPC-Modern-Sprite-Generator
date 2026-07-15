@@ -218,6 +218,10 @@ export const ItemWithRecolors: m.Component<
                               m("label", opt.label),
                               m(
                                 "div.palette-swatch",
+                                {
+                                  role: "img",
+                                  "aria-label": `${opt.label ?? "Recolor"} current palette preview`,
+                                },
                                 gradient.map((color) =>
                                   m("span", {
                                     style: {
@@ -347,6 +351,10 @@ export const ItemWithRecolors: m.Component<
                                 m("label", opt.label),
                                 m(
                                   "div.palette-swatch",
+                                  {
+                                    role: "img",
+                                    "aria-label": `${opt.label ?? "Recolor"} current palette preview`,
+                                  },
                                   gradient.map((color) =>
                                     m("span", {
                                       style: {
