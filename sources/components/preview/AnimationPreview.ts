@@ -1,6 +1,7 @@
 // RPG Character Preview Stage component
 import m from "mithril";
 import { state } from "../../state/state.ts";
+import { interactionFeedback } from "../../utils/interaction-feedback.ts";
 import { DIRECTIONS } from "../../state/constants.ts";
 import {
   repaintStaticPreviewFrameForTests,
@@ -464,6 +465,13 @@ export const AnimationPreview: m.Component<
           m("div.preview-canvas-root.rpg-preview-stage__character", [
             vnode.state.showRune
               ? m("div.rpg-preview-stage__rune", { "aria-hidden": true })
+              : null,
+            interactionFeedback.flashNonce
+              ? m("span.rpg-equip-flash", {
+                  key: interactionFeedback.flashNonce,
+                  class: `rpg-equip-flash--${interactionFeedback.flashRegion}`,
+                  "aria-hidden": true,
+                })
               : null,
             m(PreviewCanvas, {
               selectedAnimation: vnode.state.selectedAnimation,

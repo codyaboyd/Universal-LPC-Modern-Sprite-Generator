@@ -3,6 +3,10 @@ import m from "mithril";
 import type { CatalogReader } from "../../state/catalog.ts";
 import { state } from "../../state/state.ts";
 import {
+  emitInteractionFeedback,
+  snapshotSelections,
+} from "../../utils/interaction-feedback.ts";
+import {
   isItemLicenseCompatible,
   isItemAnimationCompatible,
 } from "../../state/filters.ts";
@@ -90,7 +94,16 @@ export const CurrentSelections: m.Component<CurrentSelectionsAttrs> = {
               !isCompatible ? m("span.ml-1", "⚠️") : null,
               m("button.delete.is-small", {
                 onclick: () => {
+                  const before = snapshotSelections();
                   delete state.selections[selectionKey];
+                  emitInteractionFeedback({
+                    action: "remove",
+                    itemId: selection.itemId,
+                    itemName: selection.name,
+                    selectionGroup: selectionKey,
+                    before,
+                    undoable: true,
+                  });
                 },
               }),
             ],

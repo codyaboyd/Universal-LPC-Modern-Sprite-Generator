@@ -9,6 +9,10 @@ import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
 import { downloadAsPNG } from "../canvas/download.ts";
+import {
+  dismissToast,
+  interactionFeedback,
+} from "../utils/interaction-feedback.ts";
 
 /**
  * App is the composition root for catalog DI. main.ts mounts it with the
@@ -153,6 +157,30 @@ export const App: m.Component<AppAttrs, AppState> = {
         { "aria-label": "Character credits and summary" },
         [m(Credits, { catalog: vnode.attrs.catalog })],
       ),
+      interactionFeedback.toasts.length
+        ? m(
+            "div.rpg-feedback-toasts",
+            { "aria-live": "polite", "aria-atomic": "false" },
+            interactionFeedback.toasts.map((toast) =>
+              m("div.rpg-feedback-toast", { key: toast.id, role: "status" }, [
+                m("span.rpg-feedback-toast__icon", "✦"),
+                m("span.rpg-feedback-toast__message", toast.message),
+                toast.undo
+                  ? m(
+                      "button.btn btn-sm btn-link rpg-feedback-toast__undo",
+                      { type: "button", onclick: toast.undo },
+                      "Undo",
+                    )
+                  : null,
+                m("button.btn-close btn-close-white", {
+                  type: "button",
+                  "aria-label": "Dismiss",
+                  onclick: () => dismissToast(toast.id),
+                }),
+              ]),
+            ),
+          )
+        : null,
       m(
         "div.creator-bottom-bar",
         { role: "toolbar", "aria-label": "Primary character actions" },
