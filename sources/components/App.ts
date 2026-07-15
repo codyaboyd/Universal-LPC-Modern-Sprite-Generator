@@ -1,6 +1,6 @@
 // Main app component
 import m from "mithril";
-import { state } from "../state/state.ts";
+import { state, resetAll } from "../state/state.ts";
 import { syncSelectionsToHash } from "../state/hash.ts";
 import type { CatalogReader } from "../state/catalog.ts";
 import { Download } from "./download/Download.ts";
@@ -8,6 +8,7 @@ import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
 import { renderCharacter } from "../canvas/renderer.ts";
+import { downloadAsPNG } from "../canvas/download.ts";
 
 /**
  * App is the composition root for catalog DI. main.ts mounts it with the
@@ -24,6 +25,33 @@ type AppState = {
   prevCustomImage: HTMLImageElement | null;
   prevCustomZPos: number;
 };
+
+function rerollVisibleChoices(catalog: CatalogReader): void {
+  for (const selection of Object.values(state.selections)) {
+    const meta = catalog.getItemMerged(selection.itemId);
+    if (!meta || meta.isErr()) continue;
+    const item = meta.value;
+    if (item.variants?.length) {
+      selection.variant =
+        item.variants[Math.floor(Math.random() * item.variants.length)] ?? "";
+    }
+    if (item.recolors?.length) {
+      const recolor =
+        item.recolors[Math.floor(Math.random() * item.recolors.length)];
+      const paletteKeys = recolor ? Object.keys(recolor.palettes ?? {}) : [];
+      selection.recolor =
+        paletteKeys[Math.floor(Math.random() * paletteKeys.length)] ??
+        selection.recolor ??
+        "";
+    }
+  }
+  syncSelectionsToHash(catalog);
+  void renderCharacter(state.selections, state.bodyType).then(() => m.redraw());
+}
+
+function selectedCount(): number {
+  return Object.keys(state.selections).length;
+}
 
 export const App: m.Component<AppAttrs, AppState> = {
   oninit(vnode) {
@@ -63,23 +91,129 @@ export const App: m.Component<AppAttrs, AppState> = {
     }
   },
   view(vnode) {
-    return m("div.app-workspace", [
-      m("section.export-controls", { "aria-label": "Export controls" }, [
-        m(Download, { catalog: vnode.attrs.catalog }),
+    return m("div.rpg-creator", [
+      m("div.creator-hero.mb-3", [
+        m("span.creator-kicker", "Arcane atelier"),
+        m("h2.h4.mb-1", "Forge your hero"),
+        m(
+          "p.mb-0",
+          "Choose ancestry, gear, colors, and animation sheets without leaving the preview.",
+        ),
+      ]),
+      m("div.creator-workbench", [
+        m(
+          "aside.creator-categories",
+          { "aria-label": "Character customization categories" },
+          [
+            m(
+              "div.creator-categories__scroller",
+              [
+                "Body",
+                "Hair",
+                "Face",
+                "Torso",
+                "Legs",
+                "Feet",
+                "Gear",
+                "Weapons",
+              ].map((label) =>
+                m(
+                  "a.creator-category-pill",
+                  { href: "#category-tree-panel" },
+                  label,
+                ),
+              ),
+            ),
+          ],
+        ),
+        m("section.creator-tools", { "aria-label": "Customizer tools" }, [
+          m("div.creator-tools__header", [
+            m("div", [
+              m("h3.h5.mb-1", "Customize"),
+              m("p.small.mb-0", `${selectedCount()} layers selected`),
+            ]),
+            m(
+              "button.btn.btn-outline-warning.btn-sm",
+              {
+                type: "button",
+                onclick: () => rerollVisibleChoices(vnode.attrs.catalog),
+              },
+              [
+                m("i.bi.bi-shuffle.me-1", { "aria-hidden": "true" }),
+                "Randomize colors",
+              ],
+            ),
+          ]),
+          m(FiltersPanel, { catalog: vnode.attrs.catalog }),
+          m("div.creator-advanced", [m(AdvancedTools)]),
+        ]),
       ]),
       m(
-        "section.category-navigation",
-        { "aria-label": "Category navigation and filters" },
-        [m(FiltersPanel, { catalog: vnode.attrs.catalog })],
-      ),
-      m(
-        "section.character-summary",
+        "section.creator-summary.app-panel.p-3.mt-3",
         { "aria-label": "Character credits and summary" },
         [m(Credits, { catalog: vnode.attrs.catalog })],
       ),
-      m("section.item-browser", { "aria-label": "Advanced item tools" }, [
-        m(AdvancedTools),
-      ]),
+      m(
+        "div.creator-bottom-bar",
+        { role: "toolbar", "aria-label": "Primary character actions" },
+        [
+          m(
+            "button.btn.btn-outline-light",
+            {
+              type: "button",
+              onclick: () => rerollVisibleChoices(vnode.attrs.catalog),
+            },
+            [m("i.bi.bi-dice-5.me-1"), "Randomize"],
+          ),
+          m(
+            "button.btn.btn-outline-warning",
+            { type: "button", onclick: resetAll },
+            [m("i.bi.bi-arrow-counterclockwise.me-1"), "Reset"],
+          ),
+          m(
+            "button.btn.btn-warning",
+            {
+              type: "button",
+              onclick: () => downloadAsPNG("character-spritesheet.png"),
+            },
+            [m("i.bi.bi-download.me-1"), "Save PNG"],
+          ),
+          m(
+            "button.btn.btn-dark",
+            {
+              type: "button",
+              "data-bs-toggle": "offcanvas",
+              "data-bs-target": "#exportSheet",
+            },
+            [m("i.bi.bi-box-arrow-up.me-1"), "Export"],
+          ),
+        ],
+      ),
+      m(
+        "div.offcanvas.offcanvas-bottom.export-sheet",
+        {
+          id: "exportSheet",
+          tabindex: "-1",
+          "aria-labelledby": "exportSheetLabel",
+        },
+        [
+          m("div.offcanvas-header", [
+            m(
+              "h2.h5.offcanvas-title",
+              { id: "exportSheetLabel" },
+              "Export your hero",
+            ),
+            m("button.btn-close", {
+              type: "button",
+              "data-bs-dismiss": "offcanvas",
+              "aria-label": "Close",
+            }),
+          ]),
+          m("div.offcanvas-body", [
+            m(Download, { catalog: vnode.attrs.catalog }),
+          ]),
+        ],
+      ),
     ]);
   },
 };

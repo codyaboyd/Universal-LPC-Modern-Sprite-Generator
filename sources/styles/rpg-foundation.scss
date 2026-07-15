@@ -142,3 +142,278 @@ body {
 .export-controls {
   min-width: 0;
 }
+
+/* RPG creator application shell */
+.app-shell {
+  position: relative;
+  overflow-x: clip;
+  background:
+    radial-gradient(
+      circle at 15% 10%,
+      rgba(183, 125, 255, 0.2),
+      transparent 22rem
+    ),
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(255, 209, 102, 0.14),
+      transparent 18rem
+    ),
+    linear-gradient(135deg, #120f19 0%, #24182f 48%, #171219 100%);
+}
+.app-shell::before {
+  content: "";
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.22;
+  background-image:
+    linear-gradient(
+      30deg,
+      rgba(255, 255, 255, 0.025) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgba(255, 255, 255, 0.025) 87.5%
+    ),
+    linear-gradient(
+      150deg,
+      rgba(255, 255, 255, 0.025) 12%,
+      transparent 12.5%,
+      transparent 87%,
+      rgba(255, 255, 255, 0.025) 87.5%
+    );
+  background-size: 42px 42px;
+}
+.app-topbar {
+  background: linear-gradient(
+    180deg,
+    rgba(31, 23, 38, 0.96),
+    rgba(16, 13, 20, 0.94)
+  );
+  border-bottom: 1px solid rgba(255, 209, 102, 0.55);
+  box-shadow:
+    0 0.75rem 2rem rgba(0, 0, 0, 0.35),
+    inset 0 -1px rgba(255, 255, 255, 0.08);
+}
+.app-topbar,
+.app-topbar .text-secondary,
+.app-topbar a,
+.app-brand {
+  color: var(--rpg-text-inverse) !important;
+}
+.app-brand {
+  text-shadow: 0 0 18px rgba(255, 209, 102, 0.35);
+}
+.app-panel {
+  position: relative;
+  border: 1px solid rgba(215, 164, 65, 0.42);
+  background:
+    radial-gradient(
+      circle at 0 0,
+      rgba(255, 209, 102, 0.12),
+      transparent 12rem
+    ),
+    linear-gradient(
+      180deg,
+      rgba(255, 248, 231, 0.98),
+      rgba(226, 203, 154, 0.96)
+    );
+  box-shadow:
+    0 1rem 2.5rem rgba(0, 0, 0, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
+}
+.app-panel::before,
+.app-panel::after {
+  content: "✦";
+  position: absolute;
+  color: rgba(122, 87, 48, 0.55);
+  font-size: 1rem;
+  line-height: 1;
+}
+.app-panel::before {
+  top: 0.55rem;
+  left: 0.75rem;
+}
+.app-panel::after {
+  right: 0.75rem;
+  bottom: 0.55rem;
+  transform: rotate(180deg);
+}
+.character-preview-stage {
+  min-height: clamp(360px, 58vh, 720px);
+}
+#mithril-preview {
+  min-height: 320px;
+  display: grid;
+  place-items: center;
+}
+.rpg-creator {
+  padding-bottom: 5.75rem;
+}
+.creator-hero {
+  color: var(--rpg-text-inverse);
+  border: 1px solid rgba(255, 209, 102, 0.28);
+  border-radius: 1rem;
+  padding: 1rem 1.15rem;
+  background: linear-gradient(
+    135deg,
+    rgba(39, 32, 49, 0.9),
+    rgba(80, 50, 87, 0.72)
+  );
+  box-shadow: inset 0 0 2rem rgba(255, 209, 102, 0.08);
+}
+.creator-kicker {
+  color: var(--rpg-accent-gold-bright);
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  font-weight: 700;
+}
+.creator-workbench {
+  display: grid;
+  grid-template-columns: minmax(8.5rem, 0.26fr) minmax(0, 1fr);
+  gap: 1rem;
+}
+.creator-categories {
+  position: sticky;
+  top: 6rem;
+  align-self: start;
+  padding: 0.75rem;
+  border: 1px solid rgba(215, 164, 65, 0.35);
+  border-radius: 1rem;
+  background: rgba(24, 18, 30, 0.78);
+  box-shadow: inset 0 0 1.5rem rgba(255, 209, 102, 0.08);
+}
+.creator-categories__scroller {
+  display: grid;
+  gap: 0.5rem;
+}
+.creator-category-pill {
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.55rem 0.75rem;
+  color: #fff8e7;
+  text-decoration: none;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 209, 102, 0.35);
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.08),
+    rgba(255, 255, 255, 0.02)
+  );
+}
+.creator-category-pill:hover,
+.creator-category-pill:focus {
+  color: #241a14;
+  background: var(--rpg-accent-gold-bright);
+}
+.creator-tools {
+  min-width: 0;
+}
+.creator-tools__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  color: var(--rpg-text-inverse);
+  margin-bottom: 0.75rem;
+}
+.creator-tools__header .btn,
+.creator-bottom-bar .btn {
+  min-height: 44px;
+}
+.creator-summary {
+  max-height: 22rem;
+  overflow: auto;
+}
+.creator-bottom-bar {
+  position: fixed;
+  left: 50%;
+  bottom: 1rem;
+  transform: translateX(-50%);
+  z-index: 1030;
+  width: min(960px, calc(100vw - 2rem));
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.5rem;
+  padding: 0.65rem;
+  border: 1px solid rgba(255, 209, 102, 0.45);
+  border-radius: 1rem;
+  background: rgba(18, 15, 25, 0.92);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 1rem 2.5rem rgba(0, 0, 0, 0.48);
+}
+.export-sheet {
+  --bs-offcanvas-height: min(78vh, 760px);
+  background: #fff8e7;
+}
+
+@media (min-width: 1200px) {
+  #columns-container {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(380px, 0.72fr);
+  }
+  #preview-column,
+  #chooser-column {
+    width: auto;
+    max-width: none;
+  }
+  #preview-column {
+    order: 1 !important;
+  }
+  #chooser-column {
+    order: 2 !important;
+  }
+}
+@media (max-width: 991.98px) {
+  .app-stage {
+    position: static;
+  }
+  .character-preview-stage {
+    min-height: 300px;
+  }
+  .creator-workbench {
+    grid-template-columns: 1fr;
+  }
+  .creator-categories {
+    position: static;
+    overflow: hidden;
+  }
+  .creator-categories__scroller {
+    display: flex;
+    overflow-x: auto;
+    padding-bottom: 0.15rem;
+    scroll-snap-type: x proximity;
+  }
+  .creator-category-pill {
+    flex: 0 0 auto;
+    min-width: 6rem;
+    scroll-snap-align: start;
+  }
+}
+@media (max-width: 575.98px) {
+  main.container-fluid {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .app-topbar nav {
+    padding-top: 0.75rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+  .app-brand {
+    font-size: 1rem;
+  }
+  .creator-tools__header {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .creator-bottom-bar {
+    bottom: 0.5rem;
+    width: calc(100vw - 1rem);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .creator-bottom-bar .btn {
+    font-size: 0.85rem;
+  }
+}

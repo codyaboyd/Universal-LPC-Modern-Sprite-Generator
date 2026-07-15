@@ -3,6 +3,7 @@
 import m from "mithril";
 import "./styles/critical-entry.scss";
 import "./vendor-globals.ts";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import { catalogReady, defaultCatalog } from "./state/catalog.ts";
 
