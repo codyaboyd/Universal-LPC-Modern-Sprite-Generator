@@ -52,6 +52,8 @@ export type State = {
   previewBootstrapRenderDone: boolean;
   /** Mirrored from `renderCharacter` compositing (see `renderer.js`). */
   isRenderingCharacter: boolean;
+  /** Most recent sprite asset paths that failed to load while composing the preview. */
+  assetLoadFailures: string[];
   enabledLicenses: Record<string, boolean>;
   enabledAnimations: Record<string, boolean>;
 
@@ -122,6 +124,7 @@ export const state: State = {
   fullSpritesheetCanvasZoomLevel: 1,
   previewBootstrapRenderDone: false,
   isRenderingCharacter: false,
+  assetLoadFailures: [],
   enabledLicenses: Object.fromEntries(
     LICENSE_CONFIG.map((lic) => [lic.key, true]),
   ),

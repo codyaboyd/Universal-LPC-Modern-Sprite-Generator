@@ -250,6 +250,8 @@ async function runRenderCharacter(
       throw new Error("Canvas not initialized");
     }
 
+    appState.assetLoadFailures = [];
+
     // Build list of items to draw
     const customAnimationItems: CustomAnimationItem[] = []; // Track items with custom animations
 
@@ -457,6 +459,12 @@ async function runRenderCharacter(
     });
 
     const loadedItems = await Promise.all(loadPromises);
+    const assetLoadFailures = new Set<string>();
+    for (const { item, success } of loadedItems) {
+      if (!success && item.source.kind === "catalog") {
+        assetLoadFailures.add(item.source.spritePath);
+      }
+    }
 
     // Draw all items in sorted z-order
     for (const { item, img, success } of loadedItems) {
@@ -531,6 +539,11 @@ async function runRenderCharacter(
 
         // Load all custom area images in parallel
         const loadedCustomImages = await loadImagesInParallel(areaItems);
+        for (const { item: areaItem, success } of loadedCustomImages) {
+          if (!success) {
+            assetLoadFailures.add(areaItem.spritePath);
+          }
+        }
 
         // Draw in zPos order
         for (const { item: areaItem, img, success } of loadedCustomImages) {
@@ -558,6 +571,7 @@ async function runRenderCharacter(
         }
       }
     }
+    appState.assetLoadFailures = Array.from(assetLoadFailures).slice(0, 8);
   } finally {
     appState.renderCharacter.isRendering = false;
     appState.isRenderingCharacter = false;
