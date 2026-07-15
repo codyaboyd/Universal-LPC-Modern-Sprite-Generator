@@ -1,13 +1,20 @@
 // RPG Character Preview Stage component
 import m from "mithril";
 import { state } from "../../state/state.ts";
-import { ANIMATIONS } from "../../state/constants.ts";
+import { DIRECTIONS } from "../../state/constants.ts";
 import {
   repaintStaticPreviewFrameForTests,
   setPreviewAnimation,
   startPreviewAnimation,
   stopPreviewAnimation,
-  getCustomAnimations,
+  getPreviewPlaybackState,
+  getSupportedPreviewAnimations,
+  scrubPreviewFrame,
+  setPreviewDirection,
+  setPreviewLoop,
+  setPreviewPlaybackFps,
+  setPreviewVisible,
+  stepPreviewFrame,
 } from "../../canvas/preview-animation.ts";
 import {
   initPreviewCanvas,
@@ -20,6 +27,9 @@ type PreviewCanvasAttrs = {
   zoomLevel: number;
   animationEnabled: boolean;
   onFrameCycleUpdate: (frameCycle: string) => void;
+  directionIndex: number;
+  playbackFps: number;
+  loop: boolean;
 };
 
 type PreviewCanvasState = {
@@ -41,6 +51,9 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
     initPreviewCanvas(canvas);
     setPreviewCanvasZoom(vnode.attrs.zoomLevel);
     const frames = setPreviewAnimation(selectedAnimation);
+    setPreviewDirection(vnode.attrs.directionIndex);
+    setPreviewPlaybackFps(vnode.attrs.playbackFps);
+    setPreviewLoop(vnode.attrs.loop);
     if (animationEnabled) startPreviewAnimation();
     else repaintStaticPreviewFrameForTests();
 
@@ -66,11 +79,15 @@ const PreviewCanvas: m.Component<PreviewCanvasAttrs, PreviewCanvasState> = {
         vnode.state.lastAnimationEnabled = animationEnabled;
       }
 
+      setPreviewDirection(vnode.attrs.directionIndex);
+      setPreviewPlaybackFps(vnode.attrs.playbackFps);
+      setPreviewLoop(vnode.attrs.loop);
       setPreviewCanvasZoom(vnode.attrs.zoomLevel);
       repaintStaticPreviewFrameForTests();
     }
   },
   onremove() {
+    setPreviewVisible(false);
     if (window.canvasRenderer) stopPreviewAnimation();
   },
   view() {
@@ -91,6 +108,12 @@ type AnimationPreviewState = {
   background: StageBackground;
   transparentBackground: boolean;
   animationEnabled: boolean;
+  directionIndex: number;
+  playbackFps: number;
+  loop: boolean;
+  currentFrameIndex: number;
+  frameCount: number;
+  measuredFps: number;
   showRune: boolean;
   isPanning: boolean;
   panStartX: number;
@@ -107,14 +130,7 @@ const BACKGROUNDS: { value: StageBackground; label: string }[] = [
 ];
 
 function getAnimationOptions(): AnimationOption[] {
-  const customAnims = Object.keys(getCustomAnimations());
-  return [
-    ...ANIMATIONS,
-    ...customAnims.map((anim) => ({
-      value: anim,
-      label: anim.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
-    })),
-  ];
+  return getSupportedPreviewAnimations();
 }
 
 function clampZoom(zoom: number): number {
@@ -165,7 +181,16 @@ export const AnimationPreview: m.Component<
     vnode.state.showGrid = true;
     vnode.state.background = "forest";
     vnode.state.transparentBackground = false;
-    vnode.state.animationEnabled = true;
+    vnode.state.animationEnabled = !window.matchMedia?.(
+      "(prefers-reduced-motion: reduce)",
+    ).matches;
+    vnode.state.directionIndex = 2;
+    vnode.state.playbackFps = 8;
+    vnode.state.loop = true;
+    vnode.state.currentFrameIndex = 0;
+    vnode.state.frameCount = 1;
+    vnode.state.measuredFps = 0;
+    setPreviewVisible(true);
     vnode.state.showRune = true;
     vnode.state.isPanning = false;
     if (window.canvasRenderer) {
@@ -176,6 +201,10 @@ export const AnimationPreview: m.Component<
   onupdate(vnode) {
     vnode.state.zoomLevel =
       state.previewCanvasZoomLevel || vnode.state.zoomLevel;
+    const playback = getPreviewPlaybackState();
+    vnode.state.currentFrameIndex = playback.currentFrameIndex;
+    vnode.state.frameCount = playback.frameCount;
+    vnode.state.measuredFps = playback.fps;
   },
   view(vnode) {
     const allAnimations = getAnimationOptions();
@@ -262,16 +291,6 @@ export const AnimationPreview: m.Component<
             { type: "button", onclick: () => requestStageFullscreen() },
             [m("i.bi.bi-fullscreen", { "aria-hidden": true }), " Fullscreen"],
           ),
-          m(
-            "button.button.is-small",
-            {
-              type: "button",
-              class: vnode.state.animationEnabled ? "is-primary" : "",
-              onclick: () =>
-                (vnode.state.animationEnabled = !vnode.state.animationEnabled),
-            },
-            vnode.state.animationEnabled ? "Pause animation" : "Play animation",
-          ),
         ],
       ),
       m("div.rpg-preview-stage__animation-row", [
@@ -297,6 +316,111 @@ export const AnimationPreview: m.Component<
           ),
         ]),
         m("span.rpg-preview-stage__frames", vnode.state.frameCycle),
+        m("label", "Direction"),
+        m("div.select.is-small", [
+          m(
+            "select",
+            {
+              value: String(vnode.state.directionIndex),
+              onchange: (e: Event) => {
+                vnode.state.directionIndex = Number(
+                  (e.target as HTMLSelectElement).value,
+                );
+                setPreviewDirection(vnode.state.directionIndex);
+              },
+            },
+            DIRECTIONS.map((dir, index) =>
+              m("option", { value: String(index) }, dir),
+            ),
+          ),
+        ]),
+        m("label", "Speed"),
+        m("div.select.is-small", [
+          m(
+            "select",
+            {
+              value: String(vnode.state.playbackFps),
+              onchange: (e: Event) => {
+                vnode.state.playbackFps = Number(
+                  (e.target as HTMLSelectElement).value,
+                );
+                setPreviewPlaybackFps(vnode.state.playbackFps);
+              },
+            },
+            [4, 6, 8, 10, 12, 16, 24].map((fps) =>
+              m("option", { value: String(fps) }, `${fps} FPS`),
+            ),
+          ),
+        ]),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
+            onclick: () => {
+              vnode.state.animationEnabled = true;
+              startPreviewAnimation();
+            },
+          },
+          "Play",
+        ),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
+            onclick: () => {
+              vnode.state.animationEnabled = false;
+              stopPreviewAnimation();
+            },
+          },
+          "Pause",
+        ),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
+            onclick: () => {
+              vnode.state.animationEnabled = false;
+              vnode.state.currentFrameIndex = stepPreviewFrame(-1);
+            },
+          },
+          "‹ Frame",
+        ),
+        m(
+          "button.button.is-small",
+          {
+            type: "button",
+            onclick: () => {
+              vnode.state.animationEnabled = false;
+              vnode.state.currentFrameIndex = stepPreviewFrame(1);
+            },
+          },
+          "Frame ›",
+        ),
+        m("label.rpg-preview-stage__check", [
+          m("input[type=checkbox]", {
+            checked: vnode.state.loop,
+            onchange: (e: Event) => {
+              vnode.state.loop = (e.target as HTMLInputElement).checked;
+              setPreviewLoop(vnode.state.loop);
+            },
+          }),
+          " Loop",
+        ]),
+        m("input.rpg-preview-stage__timeline[type=range]", {
+          min: 0,
+          max: Math.max(0, vnode.state.frameCount - 1),
+          value: vnode.state.currentFrameIndex,
+          oninput: (e: Event) => {
+            vnode.state.animationEnabled = false;
+            vnode.state.currentFrameIndex = scrubPreviewFrame(
+              Number((e.target as HTMLInputElement).value),
+            );
+          },
+        }),
+        m(
+          "span.rpg-preview-stage__frames",
+          `Frame ${vnode.state.currentFrameIndex + 1}/${vnode.state.frameCount} · ${vnode.state.measuredFps || 0} FPS`,
+        ),
       ]),
       m(
         "div",
@@ -345,6 +469,9 @@ export const AnimationPreview: m.Component<
               selectedAnimation: vnode.state.selectedAnimation,
               zoomLevel: vnode.state.zoomLevel,
               animationEnabled: vnode.state.animationEnabled,
+              directionIndex: vnode.state.directionIndex,
+              playbackFps: vnode.state.playbackFps,
+              loop: vnode.state.loop,
               onFrameCycleUpdate: (frameCycle) =>
                 (vnode.state.frameCycle = frameCycle),
             }),

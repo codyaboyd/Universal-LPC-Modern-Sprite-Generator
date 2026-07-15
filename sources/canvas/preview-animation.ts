@@ -1,9 +1,13 @@
 import { previewCanvas, previewCtx } from "./preview-canvas.ts";
 import { state } from "../state/state.ts";
-import { FRAME_SIZE, ANIMATION_CONFIGS } from "../state/constants.ts";
+import {
+  FRAME_SIZE,
+  ANIMATION_CONFIGS,
+  ANIMATIONS,
+} from "../state/constants.ts";
 import { get2DContext, drawTransparencyBackground } from "./canvas-utils.ts";
 import { applyTransparencyMaskToCanvas } from "./mask.ts";
-import { canvas } from "./renderer.ts";
+import { canvas, drawCalls } from "./renderer.ts";
 import { customAnimations } from "../custom-animations.ts";
 import type { CustomAnimationDefinition } from "../custom-animations.ts";
 
@@ -19,8 +23,16 @@ let animationFrames: number[] = [1, 2, 3, 4, 5, 6, 7, 8]; // default for walk
 let animRowStart = 8; // default for walk (row number)
 let animRowNum = 4; // default for walk (number of rows to stack)
 let currentFrameIndex = 0;
-let lastFrameTime = Date.now();
+let selectedDirectionIndex = 2;
+let playbackFps = 8;
+let shouldLoop = true;
+let lastFrameTime = performance.now();
 let animationFrameId: number | null = null;
+let measuredFps = 0;
+let fpsSampleStart = performance.now();
+let fpsSampleFrames = 0;
+let previewVisible = true;
+let reducedMotionQuery: MediaQueryList | null = null;
 
 // Track custom animations present in current render
 let currentCustomAnimations: Record<string, CustomAnimationDefinition> = {};
@@ -47,7 +59,7 @@ export function setPreviewAnimation(animationName: string): number[] {
       : Array.from({ length: frameCount }, (_, i) => i); // [0, 1, 2, ..., 8]
 
     animRowStart = 0; // Not used for custom animations
-    animRowNum = 4; // Show all 4 directions
+    animRowNum = customAnimDef.frames.length;
     currentFrameIndex = 0;
 
     return animationFrames;
@@ -121,23 +133,24 @@ function paintPreviewFrameForCycleIndex(cycleIndex: number): void {
     tmpCanvas = canvas;
   }
 
-  // Draw stacked rows from main canvas to preview
-  for (let i = 0; i < animRowNum; i++) {
-    const srcY = activeCustomAnimation
-      ? yOffset + i * frameSize // Custom animation: use Y offset + row * frameSize
-      : (animRowStart + i) * FRAME_SIZE; // Standard animation: use row * 64
-    previewCtx.drawImage(
-      tmpCanvas,
-      currentFrame * frameSize, // source x
-      srcY, // source y
-      frameSize, // source width
-      frameSize, // source height
-      i * frameSize, // dest x (spread horizontally)
-      0, // dest y
-      frameSize, // dest width
-      frameSize, // dest height
-    );
-  }
+  const direction = Math.min(
+    selectedDirectionIndex,
+    Math.max(0, animRowNum - 1),
+  );
+  const srcY = activeCustomAnimation
+    ? yOffset + direction * frameSize
+    : (animRowStart + direction) * FRAME_SIZE;
+  previewCtx.drawImage(
+    tmpCanvas,
+    currentFrame * frameSize,
+    srcY,
+    frameSize,
+    frameSize,
+    0,
+    0,
+    frameSize,
+    frameSize,
+  );
 }
 
 /**
@@ -170,24 +183,44 @@ export function startPreviewAnimation(): void {
     return;
   }
 
-  function nextFrame(): void {
-    const fpsInterval = 1000 / 8; // 8 FPS
-    const now = Date.now();
+  if (document.hidden || !previewVisible || prefersReducedMotion()) {
+    paintPreviewFrameForCycleIndex(currentFrameIndex);
+    return;
+  }
+
+  function nextFrame(now: number): void {
+    const fpsInterval = 1000 / playbackFps;
     const elapsed = now - lastFrameTime;
 
-    if (elapsed > fpsInterval) {
+    if (elapsed >= fpsInterval) {
       lastFrameTime = now - (elapsed % fpsInterval);
 
       if (previewCtx && canvas) {
-        currentFrameIndex = (currentFrameIndex + 1) % animationFrames.length;
+        const nextIndex = currentFrameIndex + 1;
+        if (nextIndex >= animationFrames.length && !shouldLoop) {
+          currentFrameIndex = animationFrames.length - 1;
+          paintPreviewFrameForCycleIndex(currentFrameIndex);
+          stopPreviewAnimation();
+          return;
+        }
+        currentFrameIndex = nextIndex % animationFrames.length;
         paintPreviewFrameForCycleIndex(currentFrameIndex);
+        fpsSampleFrames += 1;
+        if (now - fpsSampleStart >= 1000) {
+          measuredFps = Math.round(
+            (fpsSampleFrames * 1000) / (now - fpsSampleStart),
+          );
+          fpsSampleFrames = 0;
+          fpsSampleStart = now;
+        }
       }
     }
 
     animationFrameId = requestAnimationFrame(nextFrame);
   }
 
-  nextFrame();
+  lastFrameTime = performance.now();
+  animationFrameId = requestAnimationFrame(nextFrame);
 }
 
 /**
@@ -221,4 +254,87 @@ export function setCustomAnimYPositions(
   yPositions: Record<string, number>,
 ): void {
   customAnimYPositions = yPositions;
+}
+
+function prefersReducedMotion(): boolean {
+  if (typeof window === "undefined" || !window.matchMedia) return false;
+  reducedMotionQuery ??= window.matchMedia("(prefers-reduced-motion: reduce)");
+  return reducedMotionQuery.matches;
+}
+
+export function setPreviewDirection(directionIndex: number): void {
+  selectedDirectionIndex = Math.max(
+    0,
+    Math.min(directionIndex, Math.max(0, animRowNum - 1)),
+  );
+  paintPreviewFrameForCycleIndex(currentFrameIndex);
+}
+
+export function setPreviewPlaybackFps(fps: number): void {
+  playbackFps = Math.max(1, Math.min(24, fps));
+}
+
+export function setPreviewLoop(loop: boolean): void {
+  shouldLoop = loop;
+}
+
+export function stepPreviewFrame(delta: number): number {
+  stopPreviewAnimation();
+  currentFrameIndex =
+    (currentFrameIndex + delta + animationFrames.length) %
+    animationFrames.length;
+  paintPreviewFrameForCycleIndex(currentFrameIndex);
+  return currentFrameIndex;
+}
+
+export function scrubPreviewFrame(index: number): number {
+  currentFrameIndex = Math.max(0, Math.min(index, animationFrames.length - 1));
+  paintPreviewFrameForCycleIndex(currentFrameIndex);
+  return currentFrameIndex;
+}
+
+export function getPreviewPlaybackState(): {
+  currentFrameIndex: number;
+  frameCount: number;
+  fps: number;
+} {
+  return {
+    currentFrameIndex,
+    frameCount: animationFrames.length,
+    fps: measuredFps,
+  };
+}
+
+export function setPreviewVisible(isVisible: boolean): void {
+  previewVisible = isVisible;
+  if (!isVisible) stopPreviewAnimation();
+}
+
+if (typeof document !== "undefined") {
+  document.addEventListener("visibilitychange", () => {
+    if (document.hidden) stopPreviewAnimation();
+  });
+}
+
+export function getSupportedPreviewAnimations(): {
+  value: string;
+  label: string;
+}[] {
+  const supported = new Set(drawCalls.map((call) => call.animation));
+  const folderToValue: Record<string, string> = {
+    combat_idle: "combat",
+    backslash: "1h_backslash",
+    halfslash: "1h_halfslash",
+  };
+  const values = new Set(
+    Array.from(supported).map((name) => folderToValue[name] ?? name),
+  );
+  const options = ANIMATIONS.filter((anim) => values.has(anim.value));
+  for (const anim of Object.keys(currentCustomAnimations)) {
+    options.push({
+      value: anim,
+      label: anim.replace(/_/g, " ").replace(/\b\w/g, (l) => l.toUpperCase()),
+    });
+  }
+  return options;
 }

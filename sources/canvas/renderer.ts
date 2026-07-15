@@ -188,6 +188,7 @@ export function setOffscreenCanvasInitializedForTests(value: boolean): void {
 
 /** Commit 10: one render at a time; new calls wait behind the in-flight one. */
 let renderCharacterSerial: Promise<void> = Promise.resolve();
+let renderCharacterGeneration = 0;
 
 /** @internal */
 export function resetRenderCharacterQueueForTests(): void {
@@ -207,8 +208,9 @@ export async function renderCharacter(
 ): Promise<void> {
   await catalogReady.onLayersReady;
 
+  const generation = ++renderCharacterGeneration;
   const p = renderCharacterSerial.then(() =>
-    runRenderCharacter(selections, bodyType, targetCanvas),
+    runRenderCharacter(selections, bodyType, targetCanvas, generation),
   );
   renderCharacterSerial = p.then(
     () => {},
@@ -221,6 +223,7 @@ async function runRenderCharacter(
   selections: Selections,
   bodyType: string,
   targetCanvas: HTMLCanvasElement | null,
+  generation: number,
 ): Promise<void> {
   const profiler = window.profiler;
 
@@ -239,13 +242,16 @@ async function runRenderCharacter(
   }
 
   try {
-    // Use provided canvas or default to main canvas
-    const renderCanvas = targetCanvas || canvas;
-    const renderCtx = renderCanvas?.getContext("2d", {
+    // Compose into a working canvas first. The visible/offscreen sprite sheet is
+    // committed only after all assets decode and layers draw, which prevents
+    // flicker when equipment changes rapidly.
+    const destinationCanvas = targetCanvas || canvas;
+    const renderCanvas = targetCanvas || document.createElement("canvas");
+    const renderCtx = renderCanvas.getContext("2d", {
       willReadFrequently: true,
     });
 
-    if (!renderCanvas || !renderCtx) {
+    if (!destinationCanvas || !renderCtx) {
       console.error("Canvas not initialized");
       throw new Error("Canvas not initialized");
     }
@@ -571,6 +577,21 @@ async function runRenderCharacter(
         }
       }
     }
+    if (generation !== renderCharacterGeneration) {
+      return;
+    }
+
+    if (!targetCanvas && canvas) {
+      const destinationCtx = canvas.getContext("2d", {
+        willReadFrequently: true,
+      });
+      if (!destinationCtx) throw new Error("Canvas not initialized");
+      canvas.width = renderCanvas.width;
+      canvas.height = renderCanvas.height;
+      destinationCtx.clearRect(0, 0, canvas.width, canvas.height);
+      destinationCtx.drawImage(renderCanvas, 0, 0);
+    }
+
     appState.assetLoadFailures = Array.from(assetLoadFailures).slice(0, 8);
   } finally {
     appState.renderCharacter.isRendering = false;

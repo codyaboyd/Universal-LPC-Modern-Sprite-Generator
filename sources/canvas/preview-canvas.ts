@@ -114,8 +114,8 @@ export function initPreviewCanvas(
     }
   }
 
-  previewCanvas.width = 4 * frameSize; // 4 directions
-  previewCanvas.height = frameSize; // 1 frame tall
+  previewCanvas.width = frameSize;
+  previewCanvas.height = frameSize;
 }
 
 /** Set preview canvas zoom level (0.5 to 2). */
