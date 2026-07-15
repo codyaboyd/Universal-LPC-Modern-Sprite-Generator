@@ -14,6 +14,11 @@ import {
 } from "../../state/filters.ts";
 import { COMPACT_FRAME_SIZE, FRAME_SIZE } from "../../state/constants.ts";
 import { matchesSearch, normalizeAssetLabel } from "../../utils/helpers.ts";
+import {
+  emitInteractionFeedback,
+  interactionFeedback,
+  snapshotSelections,
+} from "../../utils/interaction-feedback.ts";
 
 const FAV_KEY = "ulpc:item-browser:favorites";
 const RECENT_KEY = "ulpc:item-browser:recent";
@@ -131,7 +136,9 @@ function selectDefault(item: BrowserItem, local: ItemBrowserState) {
   const variant =
     item.meta.variants[0] ?? item.meta.recolors[0]?.variants?.[0] ?? "";
   const group = getSelectionGroup(item.itemId);
-  const isSelected = state.selections[group]?.itemId === item.itemId;
+  const before = snapshotSelections();
+  const previous = state.selections[group];
+  const isSelected = previous?.itemId === item.itemId;
   if (item.meta.variants.length || item.meta.recolors.length)
     selectItem(item.itemId, variant, isSelected);
   else if (isSelected) delete state.selections[group];
@@ -140,6 +147,16 @@ function selectDefault(item: BrowserItem, local: ItemBrowserState) {
       itemId: item.itemId,
       name: normalizeAssetLabel(item.meta.name || item.itemId),
     };
+
+  const action = isSelected ? "remove" : previous ? "replace" : "equip";
+  emitInteractionFeedback({
+    action,
+    itemId: item.itemId,
+    itemName: normalizeAssetLabel(item.meta.name || item.itemId),
+    selectionGroup: group,
+    before,
+    undoable: action !== "equip",
+  });
   local.recent = [
     item.itemId,
     ...local.recent.filter((id) => id !== item.itemId),
@@ -426,6 +443,9 @@ export const ItemBrowser: m.Component<ItemBrowserAttrs, ItemBrowserState> = {
       ),
       m(
         "div.row.g-2 item-browser__results",
+        {
+          key: `${local.category}:${local.palette}:${local.sortMode}:${local.viewMode}`,
+        },
         shown.map((item) =>
           m(
             "div",
@@ -443,6 +463,8 @@ export const ItemBrowser: m.Component<ItemBrowserAttrs, ItemBrowserState> = {
                 class: classNames("item-browser__card h-100", {
                   "border-primary shadow-sm": item.equipped,
                   "opacity-75": !item.compatible,
+                  "item-browser__card--feedback":
+                    interactionFeedback.activeItemId === item.itemId,
                 }),
               },
               [
