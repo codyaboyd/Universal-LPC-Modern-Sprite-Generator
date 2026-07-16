@@ -25,9 +25,11 @@ function withPlatform(platform, fn) {
   }
 }
 
-test("getSpritesheetsPlugin(serve) uses dynamic public directory plugin", () => {
+test("getSpritesheetsPlugin(serve) serves static assets without watchers", () => {
   const plugin = getSpritesheetsPlugin("serve");
-  assert.equal(plugin.name, "dynamic assets");
+  assert.equal(plugin.name, "serve-static-without-watching");
+  assert.equal(plugin.apply, "serve");
+  assert.equal(typeof plugin.configureServer, "function");
 });
 
 test("getSpritesheetsPlugin(build) on non-Windows uses vite-plugin-run", () => {

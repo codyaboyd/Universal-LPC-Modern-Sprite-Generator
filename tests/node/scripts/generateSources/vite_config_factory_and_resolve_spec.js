@@ -72,7 +72,7 @@ test("vite.config.js factory (serve): metadata aliases and chunk groups match bu
   assert.equal(cfg.plugins[1].name, "vite-plugin-item-metadata");
   assert.equal(cfg.plugins[2].name, "vite-plugin-metadata-modulepreload");
   assert.equal(cfg.plugins[3].name, "bundled-css-after-bulma");
-  assert.equal(cfg.plugins[4].name, "dynamic assets");
+  assert.equal(cfg.plugins[4].name, "serve-static-without-watching");
 });
 
 test("resolveConfig (build): merged aliases and rolldown groups stay consistent", async () => {
@@ -127,7 +127,7 @@ test("resolveConfig (build): merged aliases and rolldown groups stay consistent"
   );
 });
 
-test("resolveConfig (serve): merged config includes dynamic assets and metadata groups", async () => {
+test("resolveConfig (serve): merged config includes unwatched static assets and metadata groups", async () => {
   const { default: viteConfigFactory } =
     await import("../../../../vite.config.js");
   const user = viteConfigFactory({ command: "serve" });
@@ -147,5 +147,7 @@ test("resolveConfig (serve): merged config includes dynamic assets and metadata 
   assert.ok(
     resolved.plugins.some((p) => p?.name === "vite-plugin-item-metadata"),
   );
-  assert.ok(resolved.plugins.some((p) => p?.name === "dynamic assets"));
+  assert.ok(
+    resolved.plugins.some((p) => p?.name === "serve-static-without-watching"),
+  );
 });

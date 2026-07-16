@@ -25,6 +25,11 @@ export default defineConfig(({ command }) => ({
   base: "./",
   publicDir: false,
   logLevel: "info",
+  server: {
+    watch: {
+      ignored: ["**/spritesheets/**", "**/dist/spritesheets/**"],
+    },
+  },
   resolve: {
     alias: [
       {
