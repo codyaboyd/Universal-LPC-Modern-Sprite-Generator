@@ -179,6 +179,31 @@ export const AnimationPreview: m.Component<
   Record<string, never>,
   AnimationPreviewState
 > = {
+  oncreate(vnode) {
+    const handleCommand = (event: Event) => {
+      const command = (event as CustomEvent<string>).detail;
+      if (command === "toggle") {
+        vnode.state.animationEnabled = !vnode.state.animationEnabled;
+        if (vnode.state.animationEnabled) startPreviewAnimation();
+        else stopPreviewAnimation();
+      } else if (command === "previous" || command === "next") {
+        vnode.state.animationEnabled = false;
+        vnode.state.currentFrameIndex = stepPreviewFrame(
+          command === "previous" ? -1 : 1,
+        );
+      } else if (command === "zoom-in" || command === "zoom-out") {
+        setZoom(
+          vnode,
+          vnode.state.zoomLevel + (command === "zoom-in" ? 0.25 : -0.25),
+        );
+      } else if (command === "fit") fitToStage(vnode);
+      m.redraw();
+    };
+    (
+      vnode.state as AnimationPreviewState & { handleCommand?: EventListener }
+    ).handleCommand = handleCommand;
+    window.addEventListener("preview-command", handleCommand);
+  },
   oninit(vnode) {
     vnode.state.selectedAnimation = "walk";
     vnode.state.zoomLevel = state.previewCanvasZoomLevel || 2;
@@ -216,6 +241,12 @@ export const AnimationPreview: m.Component<
     vnode.state.currentFrameIndex = playback.currentFrameIndex;
     vnode.state.frameCount = playback.frameCount;
     vnode.state.measuredFps = playback.fps;
+  },
+  onremove(vnode) {
+    const handler = (
+      vnode.state as AnimationPreviewState & { handleCommand?: EventListener }
+    ).handleCommand;
+    if (handler) window.removeEventListener("preview-command", handler);
   },
   view(vnode) {
     const allAnimations = getAnimationOptions();

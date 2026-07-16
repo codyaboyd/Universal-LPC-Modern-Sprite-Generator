@@ -8,6 +8,12 @@ import { DiagnosticsPanel } from "./DiagnosticsPanel.ts";
 import { FiltersPanel } from "./FiltersPanel.ts";
 import { Credits } from "./download/Credits.ts";
 import { AdvancedTools } from "./advanced/AdvancedTools.ts";
+import { PowerUserTools, ShortcutHelpModal } from "./PowerUserTools.ts";
+import {
+  recordSelectionHistory,
+  redoSelections,
+  undoSelections,
+} from "../state/power-user.ts";
 import { RandomizerPanel } from "./RandomizerPanel.ts";
 import { CharacterPresentation } from "./CharacterPresentation.ts";
 import { PresetManager } from "./PresetManager.ts";
@@ -41,7 +47,19 @@ type AppState = {
   prevCustomImage: HTMLImageElement | null;
   prevCustomZPos: number;
   prevPresentationFingerprint: string;
+  shortcutHandler: (event: KeyboardEvent) => void;
 };
+
+function isTypingTarget(target: EventTarget | null): boolean {
+  const element = target as HTMLElement | null;
+  return !!element?.closest(
+    "input, textarea, select, [contenteditable='true']",
+  );
+}
+
+function previewCommand(detail: string): void {
+  window.dispatchEvent(new CustomEvent("preview-command", { detail }));
+}
 
 function rerollVisibleChoices(catalog: CatalogReader): void {
   for (const selection of Object.values(state.selections)) {
@@ -78,6 +96,51 @@ export const App: m.Component<AppAttrs, AppState> = {
     vnode.state.prevCustomImage = state.customUploadedImage;
     vnode.state.prevCustomZPos = state.customImageZPos;
     vnode.state.prevPresentationFingerprint = `${vnode.state.prevSelections}:${vnode.state.prevBodyType}`;
+    recordSelectionHistory("Starting character");
+    vnode.state.shortcutHandler = (event: KeyboardEvent) => {
+      if (isTypingTarget(event.target)) return;
+      const modifier = event.ctrlKey || event.metaKey;
+      const key = event.key.toLowerCase();
+      let handled = true;
+      if (modifier && key === "z" && event.shiftKey) redoSelections();
+      else if (modifier && key === "z") undoSelections();
+      else if (modifier && key === "y") redoSelections();
+      else if (modifier && key === "s")
+        void downloadAsPNG("character-spritesheet.png");
+      else if (!modifier && key === "r")
+        rerollVisibleChoices(vnode.attrs.catalog);
+      else if (!modifier && event.key === " ") previewCommand("toggle");
+      else if (!modifier && event.key === ",") previewCommand("previous");
+      else if (!modifier && event.key === ".") previewCommand("next");
+      else if (!modifier && (event.key === "+" || event.key === "="))
+        previewCommand("zoom-in");
+      else if (!modifier && event.key === "-") previewCommand("zoom-out");
+      else if (!modifier && event.key === "0") previewCommand("fit");
+      else if (!modifier && event.key === "/")
+        (
+          document.querySelector(
+            "input[type='search']",
+          ) as HTMLInputElement | null
+        )?.focus();
+      else if (!modifier && key === "e")
+        (
+          document.querySelector(
+            "[data-bs-target='#exportSheet']",
+          ) as HTMLButtonElement | null
+        )?.click();
+      else if (!modifier && event.key === "?") state.showShortcutHelp = true;
+      else if (event.key === "Escape" && state.showShortcutHelp)
+        state.showShortcutHelp = false;
+      else handled = false;
+      if (handled) {
+        event.preventDefault();
+        m.redraw();
+      }
+    };
+    window.addEventListener("keydown", vnode.state.shortcutHandler);
+  },
+  onremove(vnode) {
+    window.removeEventListener("keydown", vnode.state.shortcutHandler);
   },
   onupdate(vnode) {
     // Only sync hash and render canvas if selections, bodyType, or custom image changed
@@ -120,6 +183,7 @@ export const App: m.Component<AppAttrs, AppState> = {
       vnode.state.prevBodyType = currentBodyType;
       vnode.state.prevCustomImage = currentCustomImage;
       vnode.state.prevCustomZPos = currentCustomZPos;
+      recordSelectionHistory("Selection changed");
       writeAutosave();
     }
   },
@@ -194,6 +258,7 @@ export const App: m.Component<AppAttrs, AppState> = {
           m(PresetManager, { catalog: vnode.attrs.catalog }),
           m(FiltersPanel, { catalog: vnode.attrs.catalog }),
           m("div.creator-advanced", [m(AdvancedTools)]),
+          m("div.creator-advanced", [m(PowerUserTools)]),
         ]),
       ]),
       m(
@@ -218,6 +283,7 @@ export const App: m.Component<AppAttrs, AppState> = {
           ])
         : null,
       m(DiagnosticsPanel),
+      m(ShortcutHelpModal),
       interactionFeedback.toasts.length
         ? m(
             "div.rpg-feedback-toasts",

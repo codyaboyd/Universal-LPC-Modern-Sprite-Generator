@@ -41,7 +41,7 @@ export const RandomizerPanel: m.Component<Attrs, Local> = {
   oninit(vnode) {
     vnode.state.mode = "hero";
     vnode.state.seed = currentSeed();
-    vnode.state.locks = { categories: {}, choices: {} };
+    vnode.state.locks = state.randomizerLocks;
     vnode.state.undo = null;
     vnode.state.summoning = false;
   },
