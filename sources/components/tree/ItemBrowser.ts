@@ -459,97 +459,130 @@ export const ItemBrowser: m.Component<ItemBrowserAttrs, ItemBrowserState> = {
         {
           key: `${local.category}:${local.palette}:${local.sortMode}:${local.viewMode}`,
         },
-        shown.map((item) =>
-          m(
-            "div",
-            {
-              key: item.itemId,
-              "data-item-id": item.itemId,
-              class:
-                local.viewMode === "grid"
-                  ? "col-6 col-sm-4 col-md-3 col-lg-2"
-                  : "col-12",
-            },
-            m(
-              "article.card",
-              {
-                class: classNames("item-browser__card h-100", {
-                  "border-primary shadow-sm": item.equipped,
-                  "opacity-75": !item.compatible,
-                  "item-browser__card--feedback":
-                    interactionFeedback.activeItemId === item.itemId,
-                }),
-              },
-              [
+        shown.length
+          ? shown.map((item) =>
+              m(
+                "div",
+                {
+                  key: item.itemId,
+                  "data-item-id": item.itemId,
+                  class:
+                    local.viewMode === "grid"
+                      ? "col-6 col-sm-4 col-md-3 col-lg-2"
+                      : "col-12",
+                },
                 m(
-                  "button.item-browser__equip",
+                  "article.card",
                   {
-                    type: "button",
-                    onclick: () => selectDefault(item, local),
-                    disabled: !item.compatible,
+                    class: classNames("item-browser__card h-100", {
+                      "border-primary shadow-sm": item.equipped,
+                      "opacity-75": !item.compatible,
+                      "item-browser__card--feedback":
+                        interactionFeedback.activeItemId === item.itemId,
+                    }),
                   },
                   [
-                    m(PreviewCanvas, { item, catalog: vnode.attrs.catalog }),
                     m(
-                      "strong.item-browser__name",
-                      normalizeAssetLabel(item.meta.name || item.itemId),
-                    ),
-                    m(
-                      "span.badge text-bg-secondary",
-                      item.category.split(" / ").pop(),
-                    ),
-                    item.meta.variants[0]
-                      ? m(
-                          "span.badge text-bg-info",
-                          normalizeAssetLabel(item.meta.variants[0]),
-                        )
-                      : null,
-                    item.meta.recolors[0]
-                      ? m(
-                          "span.badge text-bg-warning",
-                          normalizeAssetLabel(
-                            item.meta.recolors[0].label ||
-                              item.meta.recolors[0].material,
-                          ),
-                        )
-                      : null,
-                    m(
-                      "span.badge",
+                      "button.item-browser__equip",
                       {
-                        class: item.compatible
-                          ? "text-bg-success"
-                          : "text-bg-danger",
+                        type: "button",
+                        onclick: () => selectDefault(item, local),
+                        disabled: !item.compatible,
                       },
-                      item.compatible ? "Compatible" : "Incompatible",
+                      [
+                        m(PreviewCanvas, {
+                          item,
+                          catalog: vnode.attrs.catalog,
+                        }),
+                        m(
+                          "strong.item-browser__name",
+                          normalizeAssetLabel(item.meta.name || item.itemId),
+                        ),
+                        m(
+                          "span.badge text-bg-secondary",
+                          item.category.split(" / ").pop(),
+                        ),
+                        item.meta.variants[0]
+                          ? m(
+                              "span.badge text-bg-info",
+                              normalizeAssetLabel(item.meta.variants[0]),
+                            )
+                          : null,
+                        item.meta.recolors[0]
+                          ? m(
+                              "span.badge text-bg-warning",
+                              normalizeAssetLabel(
+                                item.meta.recolors[0].label ||
+                                  item.meta.recolors[0].material,
+                              ),
+                            )
+                          : null,
+                        m(
+                          "span.badge",
+                          {
+                            class: item.compatible
+                              ? "text-bg-success"
+                              : "text-bg-danger",
+                          },
+                          item.compatible ? "Compatible" : "Incompatible",
+                        ),
+                        item.equipped
+                          ? m("span.badge text-bg-primary", "Equipped")
+                          : null,
+                      ],
                     ),
-                    item.equipped
-                      ? m("span.badge text-bg-primary", "Equipped")
-                      : null,
+                    m("div.card-footer d-flex justify-content-between", [
+                      m(
+                        "button.btn btn-link btn-sm",
+                        {
+                          "aria-label": "Toggle favorite",
+                          onclick: () => {
+                            if (item.favorite)
+                              local.favorites.delete(item.itemId);
+                            else local.favorites.add(item.itemId);
+                            writeJson(FAV_KEY, Array.from(local.favorites));
+                          },
+                        },
+                        item.favorite ? "★" : "☆",
+                      ),
+                      m(
+                        "button.btn btn-outline-secondary btn-sm",
+                        { onclick: () => (local.details = item) },
+                        "Details",
+                      ),
+                    ]),
                   ],
                 ),
-                m("div.card-footer d-flex justify-content-between", [
-                  m(
-                    "button.btn btn-link btn-sm",
-                    {
-                      "aria-label": "Toggle favorite",
-                      onclick: () => {
-                        if (item.favorite) local.favorites.delete(item.itemId);
-                        else local.favorites.add(item.itemId);
-                        writeJson(FAV_KEY, Array.from(local.favorites));
-                      },
+              ),
+            )
+          : m(
+              "div.col-12",
+              m("div.item-browser__empty", [
+                m("i.bi.bi-search", { "aria-hidden": "true" }),
+                m("h3.h6.mb-1", "No items match these filters"),
+                m(
+                  "p.small.text-muted.mb-2",
+                  "Clear search terms or turn off Compatible, Equipped, Favorites, or Recent to see more choices.",
+                ),
+                m(
+                  "button.btn.btn-sm.btn-outline-primary",
+                  {
+                    type: "button",
+                    onclick: () => {
+                      local.query = "";
+                      local.debouncedQuery = "";
+                      local.category = "all";
+                      local.palette = "all";
+                      local.compatibleOnly = false;
+                      local.equippedOnly = false;
+                      local.favoriteOnly = false;
+                      local.recentOnly = false;
                     },
-                    item.favorite ? "★" : "☆",
-                  ),
-                  m(
-                    "button.btn btn-outline-secondary btn-sm",
-                    { onclick: () => (local.details = item) },
-                    "Details",
-                  ),
-                ]),
-              ],
+                  },
+                  "Clear all filters",
+                ),
+              ]),
             ),
-          ),
-        ),
       ),
       items.length > shown.length
         ? m(
