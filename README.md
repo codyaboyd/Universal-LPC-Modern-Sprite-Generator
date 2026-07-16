@@ -1,18 +1,113 @@
-LPC Spritesheet Character Generator
-=============================================
+# Universal LPC Modern Sprite Generator
 
-#### Translations
+A browser-based RPG character creator that composes the community-maintained
+Liberated Pixel Cup (LPC) catalog into animated, game-ready character sheets.
+The modern UI supports searchable equipment, palette recoloring, compatibility
+validation, live animation previews, shareable URLs/presets, and PNG/ZIP exports
+with the attribution data required by the selected art licenses.
 
-[![en](https://img.shields.io/badge/lang-en-red.svg)](https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/README.md) [![zh](https://img.shields.io/badge/lang-zh-green.svg)](https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/lang/zh/README_ZH.md)
+[Open the hosted generator](https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/) · [Report a problem](https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator/issues)
 
-This generator is a modernized upgrade of the original LPC Universal Sprite Generator and attempts to include all [LPC](https://lpc.opengameart.org) created character art up to now.
+## Release and developer guide
 
-Try it [here](https://liberatedpixelcup.github.io/Universal-LPC-Spritesheet-Character-Generator/).
+| Topic                                     | Documentation                                                            |
+| ----------------------------------------- | ------------------------------------------------------------------------ |
+| Development setup, build, and tests       | [Quick start](#development-setup) and [CONTRIBUTING.md](CONTRIBUTING.md) |
+| Asset catalog and adding LPC art          | [Asset authoring guide](docs/asset-authoring-guide.md)                   |
+| Compatibility rule authoring              | [Compatibility rules](docs/asset-compatibility-rules.md)                 |
+| Animation/frame mapping                   | [Animation preview system](docs/animation-preview-system.md)             |
+| Theme customization and performance modes | [Theme system](docs/theme-system.md)                                     |
+| Saved-character/preset schema             | [Preset format](docs/preset-format.md)                                   |
+| PNG, JSON, credits, and ZIP output        | [Export format](docs/export-format.md)                                   |
+| Accessibility                             | [Accessibility guide](docs/accessibility.md)                             |
+| Browser support and troubleshooting       | [Support](#browser-support) and [Troubleshooting](#troubleshooting)      |
+| Release procedure                         | [Release checklist](docs/release-checklist.md)                           |
+| Contribution policy                       | [CONTRIBUTING.md](CONTRIBUTING.md)                                       |
 
-The Liberated Pixel Effort is a collaborative effort from a number of different great artists who helped produce sprites for the project.
-**If you wish to use LPC sprites in your project, you will need to credit everyone who helped contribute to the LPC sprites you are using.** See [below](#licensing-and-attribution-credits) for how to do this.
+## Product overview
 
-Although this particular repository focuses on character sprites, LPC includes many tilesets and some other artwork as well. Tileset collections can be found on [OpenGameArt.org](https://opengameart.org)
+Choose a body type and layer LPC clothing, hair, armor, weapons, and accessories.
+The catalog is generated from `sheet_definitions/` and images in
+`spritesheets/`; it is not hard-coded into the UI. The renderer preserves LPC
+layer order, body variants, animation layouts, recolors, and credits. Selection
+state can be shared in the URL or downloaded as a versioned JSON preset. Exports
+range from one complete sheet to animation/item ZIPs and individual frames.
+
+This repository distributes art under several licenses. **Exported art is not
+automatically relicensed:** read [Licensing and Attribution](#licensing-and-attribution-credits)
+and ship the generated credits with your game.
+
+## Development setup
+
+Prerequisites are a currently supported Node.js LTS release, npm, Git, and a
+modern browser. Chromium is required for the Playwright suite.
+
+```bash
+git clone https://github.com/LiberatedPixelCup/Universal-LPC-Spritesheet-Character-Generator.git
+cd Universal-LPC-Spritesheet-Character-Generator
+npm ci
+npm run dev                 # http://localhost:5173
+```
+
+Use `npm install` only when intentionally updating dependencies. Never open
+`index.html` through `file://`; modules and assets require an HTTP server.
+
+### Build commands
+
+```bash
+npm run build               # optimized production output in dist/
+npm run preview             # serve the production output on port 4173
+npm run validate-site-sources # regenerate/validate credits and z-position data
+```
+
+`dist/` is generated and ignored. Deploy the complete build output, including
+its copied `spritesheets/` tree, under one origin.
+
+### Test commands
+
+```bash
+npm test                    # Node unit tests plus browser integration tests
+npm run test:node           # fast Node suite
+npm run test:integration    # Testem browser suite
+npm run test:e2e            # core Playwright interactions
+npm run test:visual         # complete Playwright visual/interaction suite
+npm run lint
+npm run type-check
+npm run format:check
+```
+
+Before release, run the full matrix in [the release checklist](docs/release-checklist.md).
+Visual baselines are reviewed by Argos in CI when its token is available.
+
+## Browser support
+
+The release target is the current and previous major version of Chrome/Edge,
+Firefox, and Safari. The application needs ES modules, Canvas 2D, `fetch`,
+`URL`, `Blob`, and object-URL/download support. WebGL is an optional acceleration:
+recoloring falls back to Canvas/CPU. Mobile layouts target contemporary iOS
+Safari and Android Chrome; very small or embedded webviews may need compact and
+low-effects modes. Automated end-to-end coverage runs in Chromium, so manually
+smoke-test Firefox and Safari for releases.
+
+## Troubleshooting
+
+- **Blank UI or missing sprites:** serve over HTTP, wait for catalog loading,
+  disable aggressive content blockers, and verify the deployed
+  `spritesheets/` paths preserve case.
+- **An item is absent:** clear search/license/animation filters and enable
+  **Show incompatible assets**; then check body and compatibility requirements.
+- **Slow preview:** enable compact display or low-effects mode. If WebGL is
+  unstable, use `setPaletteRecolorMode("cpu")` in developer tools.
+- **Export is blocked:** resolve the validation summary, allow downloads, and
+  ensure the tab has enough memory. Large ZIPs intentionally take longer.
+- **Preset will not import:** validate JSON and its `version`; v2 requires
+  `bodyType` and `selections`, while v1 requires an absolute `url`.
+- **Local tests cannot find a browser:** run `npx playwright install chromium`.
+- **Generated metadata is stale:** stop Vite, remove `dist/`, run
+  `npm run validate-site-sources`, and rebuild.
+
+For reproducible bug reports, include the preset JSON or share URL, browser/OS,
+console output, exact steps, and (where relevant) the failed asset path.
 
 ### History
 

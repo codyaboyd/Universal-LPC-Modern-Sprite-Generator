@@ -2,9 +2,9 @@
 
 @use "bootstrap/scss/bootstrap";
 @use "./bulma-critical.scss";
+@use "./rpg-foundation.scss";
 
 @import "bootstrap-icons/font/bootstrap-icons.css";
-@import "./rpg-foundation.scss";
 @import "../../styles/bulma-variables-root.css";
 @import "../../styles/loading.css";
 @import "../../styles/critical-shell.css";
