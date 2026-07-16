@@ -36,10 +36,13 @@ export const CollapsibleSection: m.Component<
     return m(`div.${boxClass}`, { id }, [
       // Collapsible header
       m(
-        "div",
+        "button",
         {
+          type: "button",
           onclick: toggleCollapse,
           class: "collapsible-header",
+          "aria-expanded": String(!isCollapsed),
+          "aria-controls": id ? `${id}-content` : undefined,
         },
         [
           m("span", {
@@ -51,7 +54,14 @@ export const CollapsibleSection: m.Component<
 
       // Collapsible content
       !isCollapsed &&
-        m("div", { class: "collapsible-content" }, vnode.children),
+        m(
+          "div",
+          {
+            class: "collapsible-content",
+            id: id ? `${id}-content` : undefined,
+          },
+          vnode.children,
+        ),
     ]);
   },
 };

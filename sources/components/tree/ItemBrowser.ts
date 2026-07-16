@@ -456,9 +456,7 @@ export const ItemBrowser: m.Component<ItemBrowserAttrs, ItemBrowserState> = {
       ),
       m(
         "div.row.g-2 item-browser__results",
-        {
-          key: `${local.category}:${local.palette}:${local.sortMode}:${local.viewMode}`,
-        },
+        {},
         shown.length
           ? shown.map((item) =>
               m(

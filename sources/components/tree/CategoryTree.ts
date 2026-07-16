@@ -402,83 +402,79 @@ function renderTree(
         }),
       ),
       active
-        ? m(
-            "div.card.mb-3.rpg-anim-rise-in",
-            { key: `${active.key}:${local.categoryChangeNonce}` },
-            [
-              m(
-                "div.card-header.d-flex.justify-content-between.align-items-center",
-                [
-                  m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
-                  m(
-                    "span.small.text-muted",
-                    `${categoryOptionCount(active, catalog, true)} options`,
-                  ),
-                ],
-              ),
-              m("div.card-body", [
-                m("p.mb-2", [
-                  m("strong", "Selected: "),
-                  selectedSummary(active, catalog),
-                ]),
-                m("div.d-flex.flex-wrap.gap-2", [
-                  m("input.form-control.form-control-sm", {
-                    style: "max-width: 16rem",
-                    type: "search",
-                    placeholder: `Search ${active.label}`,
-                    value: state.searchQuery,
-                    disabled: !catalog.isLiteReady(),
-                    oninput: (e: Event) => {
-                      state.searchQuery = (e.target as HTMLInputElement).value;
-                    },
-                  }),
-                  m(
-                    "select.form-select.form-select-sm",
-                    {
-                      style: "max-width: 12rem",
-                      value: local.filterMode,
-                      onchange: (e: Event) => {
-                        local.filterMode = (e.target as HTMLSelectElement)
-                          .value as FilterMode;
-                      },
-                    },
-                    [
-                      m("option", { value: "all" }, "All options"),
-                      m("option", { value: "available" }, "Available now"),
-                      m("option", { value: "selected" }, "Selected categories"),
-                    ],
-                  ),
-                  m(
-                    "select.form-select.form-select-sm",
-                    {
-                      style: "max-width: 12rem",
-                      value: local.sortMode,
-                      onchange: (e: Event) => {
-                        local.sortMode = (e.target as HTMLSelectElement)
-                          .value as SortMode;
-                      },
-                    },
-                    [
-                      m("option", { value: "az" }, "Sort A–Z"),
-                      m("option", { value: "za" }, "Sort Z–A"),
-                      m("option", { value: "count" }, "Most options"),
-                    ],
-                  ),
-                  m(
-                    "button.btn.btn-outline-danger.btn-sm",
-                    {
-                      disabled: !hasSelected,
-                      onclick: () => {
-                        for (const group of selectedGroups)
-                          delete state.selections[group];
-                      },
-                    },
-                    "Unequip category",
-                  ),
-                ]),
+        ? m("div.card.mb-3.rpg-anim-rise-in", { "data-category": active.key }, [
+            m(
+              "div.card-header.d-flex.justify-content-between.align-items-center",
+              [
+                m("strong", [m(`i.bi.${active.icon}.me-2`), active.label]),
+                m(
+                  "span.small.text-muted",
+                  `${categoryOptionCount(active, catalog, true)} options`,
+                ),
+              ],
+            ),
+            m("div.card-body", [
+              m("p.mb-2", [
+                m("strong", "Selected: "),
+                selectedSummary(active, catalog),
               ]),
-            ],
-          )
+              m("div.d-flex.flex-wrap.gap-2", [
+                m("input.form-control.form-control-sm", {
+                  style: "max-width: 16rem",
+                  type: "search",
+                  placeholder: `Search ${active.label}`,
+                  value: state.searchQuery,
+                  disabled: !catalog.isLiteReady(),
+                  oninput: (e: Event) => {
+                    state.searchQuery = (e.target as HTMLInputElement).value;
+                  },
+                }),
+                m(
+                  "select.form-select.form-select-sm",
+                  {
+                    style: "max-width: 12rem",
+                    value: local.filterMode,
+                    onchange: (e: Event) => {
+                      local.filterMode = (e.target as HTMLSelectElement)
+                        .value as FilterMode;
+                    },
+                  },
+                  [
+                    m("option", { value: "all" }, "All options"),
+                    m("option", { value: "available" }, "Available now"),
+                    m("option", { value: "selected" }, "Selected categories"),
+                  ],
+                ),
+                m(
+                  "select.form-select.form-select-sm",
+                  {
+                    style: "max-width: 12rem",
+                    value: local.sortMode,
+                    onchange: (e: Event) => {
+                      local.sortMode = (e.target as HTMLSelectElement)
+                        .value as SortMode;
+                    },
+                  },
+                  [
+                    m("option", { value: "az" }, "Sort A–Z"),
+                    m("option", { value: "za" }, "Sort Z–A"),
+                    m("option", { value: "count" }, "Most options"),
+                  ],
+                ),
+                m(
+                  "button.btn.btn-outline-danger.btn-sm",
+                  {
+                    disabled: !hasSelected,
+                    onclick: () => {
+                      for (const group of selectedGroups)
+                        delete state.selections[group];
+                    },
+                  },
+                  "Unequip category",
+                ),
+              ]),
+            ]),
+          ])
         : m(
             "div.alert.alert-info.rpg-anim-scale-in",
             "No RPG customization categories were found in the loaded metadata.",

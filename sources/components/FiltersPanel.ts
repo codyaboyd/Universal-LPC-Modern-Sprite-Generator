@@ -15,8 +15,9 @@ export const FiltersPanel: m.Component<FiltersPanelAttrs> = {
     return m(
       CollapsibleSection,
       {
-        title: "Filters",
+        title: "Appearance & equipment",
         defaultOpen: true,
+        id: "customize-character",
       },
       [
         m("div.mb-4", m(SearchControl, { catalog: vnode.attrs.catalog })),

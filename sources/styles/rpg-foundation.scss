@@ -68,6 +68,14 @@ html {
 
 body {
   min-width: 320px;
+  font-family:
+    Inter,
+    ui-sans-serif,
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
   background:
     radial-gradient(
       circle at top left,
@@ -400,7 +408,8 @@ body {
   color: var(--rpg-text-inverse) !important;
 }
 .app-brand {
-  text-shadow: 0 0 18px rgba(255, 209, 102, 0.35);
+  font-family: Georgia, "Times New Roman", serif;
+  letter-spacing: 0.015em;
 }
 .app-panel {
   position: relative;
@@ -416,26 +425,7 @@ body {
       rgba(255, 248, 231, 0.98),
       rgba(226, 203, 154, 0.96)
     );
-  box-shadow:
-    0 1rem 2.5rem rgba(0, 0, 0, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-}
-.app-panel::before,
-.app-panel::after {
-  content: "✦";
-  position: absolute;
-  color: rgba(122, 87, 48, 0.55);
-  font-size: 1rem;
-  line-height: 1;
-}
-.app-panel::before {
-  top: 0.55rem;
-  left: 0.75rem;
-}
-.app-panel::after {
-  right: 0.75rem;
-  bottom: 0.55rem;
-  transform: rotate(180deg);
+  box-shadow: 0 0.65rem 1.5rem rgba(0, 0, 0, 0.24);
 }
 .character-preview-stage {
   min-height: clamp(360px, 58vh, 720px);
@@ -468,9 +458,7 @@ body {
   font-weight: 700;
 }
 .creator-workbench {
-  display: grid;
-  grid-template-columns: minmax(8.5rem, 0.26fr) minmax(0, 1fr);
-  gap: 1rem;
+  display: block;
 }
 .creator-categories {
   position: sticky;
@@ -521,6 +509,73 @@ body {
 .creator-tools__header .btn,
 .creator-bottom-bar .btn {
   min-height: 44px;
+}
+.creator-journey {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(5.25rem, 1fr));
+  overflow-x: auto;
+  border: 1px solid rgba(255, 209, 102, 0.3);
+  border-radius: var(--rpg-radius-lg);
+  background: rgba(18, 15, 25, 0.78);
+  scrollbar-width: thin;
+}
+.creator-journey__step {
+  position: relative;
+  display: flex;
+  min-height: 3.4rem;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  padding: 0.65rem 0.5rem;
+  color: var(--rpg-text-inverse);
+  font-size: 0.78rem;
+  font-weight: 650;
+  text-decoration: none;
+  white-space: nowrap;
+  border-right: 1px solid rgba(255, 209, 102, 0.18);
+}
+.creator-journey__step:hover,
+.creator-journey__step:focus-visible {
+  color: var(--rpg-accent-gold-bright);
+  background: rgba(255, 209, 102, 0.09);
+}
+.creator-journey__number {
+  display: grid;
+  width: 1.35rem;
+  height: 1.35rem;
+  place-items: center;
+  border: 1px solid rgba(255, 209, 102, 0.52);
+  border-radius: 50%;
+  color: var(--rpg-accent-gold-bright);
+  font-size: 0.68rem;
+}
+.collapsible-header {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: inherit;
+  text-align: left;
+}
+.character-meta__summary,
+.character-summary-card__items > summary {
+  cursor: pointer;
+}
+.character-meta__summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  list-style: none;
+}
+.character-meta__summary::-webkit-details-marker {
+  display: none;
+}
+.character-meta[open] .character-meta__summary .bi-chevron-down {
+  transform: rotate(180deg);
+}
+.character-meta__summary .bi-chevron-down {
+  transition: transform var(--rpg-transition-fast) ease;
 }
 .creator-summary {
   max-height: 22rem;
@@ -614,6 +669,20 @@ body {
   }
   .creator-bottom-bar .btn {
     font-size: 0.85rem;
+  }
+  .creator-journey {
+    grid-template-columns: repeat(7, minmax(4.75rem, 1fr));
+  }
+  .creator-journey__step {
+    flex-direction: column;
+    gap: 0.15rem;
+    min-height: 4.2rem;
+  }
+  .creator-journey__step .bi {
+    display: none;
+  }
+  .character-summary-card > .d-flex {
+    flex-direction: column;
   }
 }
 
