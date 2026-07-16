@@ -1387,6 +1387,24 @@ textarea {
     var(--safe-area-left);
 }
 
+.shortcut-list {
+  display: grid;
+  grid-template-columns: minmax(9rem, auto) 1fr;
+  gap: 0.65rem 1rem;
+  margin: 0;
+
+  dt,
+  dd {
+    margin: 0;
+  }
+}
+
+.power-history {
+  max-height: 12rem;
+  overflow: auto;
+  padding-inline-start: 1.5rem;
+}
+
 .modal.show .modal-dialog {
   max-height: calc(
     100dvh - var(--safe-area-top) - var(--safe-area-bottom) - 1rem
