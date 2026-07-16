@@ -1657,3 +1657,96 @@ textarea {
     flex-wrap: wrap;
   }
 }
+.creator-help-launch {
+  position: absolute;
+  inset-block-start: 1rem;
+  inset-inline-end: 1rem;
+  z-index: 20;
+}
+
+.onboarding-layer,
+.help-modal-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1080;
+  display: grid;
+  place-items: center;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
+  background: rgb(10 14 24 / 72%);
+}
+
+.onboarding-callout {
+  width: min(30rem, 100%);
+  max-height: calc(100dvh - 2rem);
+  overflow: auto;
+  padding: 1.25rem;
+  border: 1px solid rgb(244 190 64 / 70%);
+  border-radius: 1rem;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+}
+
+.onboarding-progress {
+  margin-bottom: 0.5rem;
+  color: #806000;
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.help-modal {
+  display: flex;
+  width: min(46rem, 100%);
+  max-height: calc(100dvh - 2rem);
+  flex-direction: column;
+  border-radius: 1rem;
+  background: var(--bs-body-bg, #fff);
+  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 40%);
+  overflow: hidden;
+}
+.help-modal__header,
+.help-modal__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
+  border-bottom: 1px solid rgb(0 0 0 / 12%);
+}
+.help-modal__footer {
+  border-top: 1px solid rgb(0 0 0 / 12%);
+  border-bottom: 0;
+}
+.help-modal__body {
+  padding: 1.25rem;
+  overflow-y: auto;
+}
+.help-articles {
+  display: grid;
+  gap: 0.75rem;
+}
+.help-article,
+.item-browser__empty {
+  padding: 1rem;
+  border: 1px solid rgb(0 0 0 / 12%);
+  border-radius: 0.75rem;
+  background: rgb(248 249 250 / 85%);
+}
+.item-browser__empty {
+  text-align: center;
+}
+
+@media (max-width: 575.98px) {
+  .creator-help-launch {
+    position: fixed;
+    inset-block-start: auto;
+    inset-block-end: calc(4.75rem + env(safe-area-inset-bottom));
+  }
+  .help-modal__footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}

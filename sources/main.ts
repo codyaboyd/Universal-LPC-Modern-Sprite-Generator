@@ -6,7 +6,12 @@ import "./vendor-globals.ts";
 import "bootstrap/dist/js/bootstrap.bundle.min.js";
 import { loadAllMetadata } from "./install-item-metadata.ts";
 import { catalogReady, defaultCatalog } from "./state/catalog.ts";
-import { installGlobalErrorHandlers, installUnsavedChangeWarning, recoverAutosaveIfPresent, reportUserError } from "./resilience.ts";
+import {
+  installGlobalErrorHandlers,
+  installUnsavedChangeWarning,
+  recoverAutosaveIfPresent,
+  reportUserError,
+} from "./resilience.ts";
 
 // Import debug first so `window.DEBUG` is set before other modules run.
 import { debugLog, getDebugParam } from "./utils/debug.ts";
@@ -77,6 +82,7 @@ import {
 } from "./ambient-atmosphere.ts";
 import { AnimationPreview } from "./components/preview/AnimationPreview.ts";
 import { FullSpritesheetPreview } from "./components/preview/FullSpritesheetPreview.ts";
+import { OnboardingHelp } from "./components/OnboardingHelp.ts";
 
 // Import performance profiler
 import { PerformanceProfiler } from "./performance-profiler.ts";
@@ -134,6 +140,10 @@ let hashHydrationInitDone = false;
 
 // Wait for DOM to be ready, then mount UI; catalog may already be loading or ready.
 document.addEventListener("DOMContentLoaded", () => {
+  const assistanceRoot = document.createElement("div");
+  assistanceRoot.id = "creator-assistance-root";
+  document.body.append(assistanceRoot);
+  m.mount(assistanceRoot, OnboardingHelp);
   initAmbientAtmosphere();
   m.mount(document.getElementById("ambient-settings-root")!, AmbientSettings);
   // Mount roots are static markup in index.html; assert non-null.
@@ -143,10 +153,16 @@ document.addEventListener("DOMContentLoaded", () => {
       try {
         return m(App, { catalog: defaultCatalog });
       } catch (error) {
-        reportUserError("The controls could not be drawn. Use diagnostics or reset to recover.", error);
+        reportUserError(
+          "The controls could not be drawn. Use diagnostics or reset to recover.",
+          error,
+        );
         return m("section.app-panel.p-3", [
           m("h2.h5", "The app hit a recoverable display problem"),
-          m("p", "Please try resetting or reloading. Diagnostics are available below for support."),
+          m(
+            "p",
+            "Please try resetting or reloading. Diagnostics are available below for support.",
+          ),
         ]);
       }
     },
