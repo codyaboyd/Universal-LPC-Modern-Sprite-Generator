@@ -72,6 +72,11 @@ export type State = {
   lowEffectsMode: boolean;
   enabledLicenses: Record<string, boolean>;
   enabledAnimations: Record<string, boolean>;
+  randomizerLocks: {
+    categories: Record<string, boolean>;
+    choices: Record<string, boolean>;
+  };
+  showShortcutHelp: boolean;
 
   // transient (never saved)
   zipByAnimation: ZipMode;
@@ -164,6 +169,8 @@ export const state: State = {
   enabledAnimations: Object.fromEntries(
     ANIMATIONS.map((anim) => [anim.value, false]),
   ),
+  randomizerLocks: { categories: {}, choices: {} },
+  showShortcutHelp: false,
 
   // Following transient state should never be saved
   zipByAnimation: { isRunning: false },
