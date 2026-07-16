@@ -1,7 +1,7 @@
 import { expect } from "chai";
-import { describe, it, beforeEach, afterEach } from "mocha-globals";
+import { describe, it, beforeEach } from "mocha-globals";
 import m from "mithril";
-import { errAsync } from "neverthrow";
+import { errAsync, ok } from "neverthrow";
 import { downloadAsPNG } from "../sources/canvas/download.ts";
 import { loadPresets, importPresetJson } from "../sources/state/presets.ts";
 import {
@@ -84,7 +84,7 @@ describe("resilience hardening", () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const catalog = {
-      getCategoryTree: () => ({ unwrapOr: () => ({ children: {} }) }),
+      getCategoryTree: () => ok({ children: {} }),
     };
     for (let i = 0; i < 20; i++)
       m.render(
@@ -103,7 +103,7 @@ describe("resilience hardening", () => {
     const host = document.createElement("div");
     document.body.appendChild(host);
     const catalog = {
-      getCategoryTree: () => ({ unwrapOr: () => ({ children: {} }) }),
+      getCategoryTree: () => ok({ children: {} }),
       getItemsForCategory: () => ({ unwrapOr: () => [] }),
     };
     for (let i = 0; i < 10; i++)

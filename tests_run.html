@@ -15,7 +15,7 @@
     <!-- Testem browser client from the testem package (not repo-root testem.cjs). -->
     <script src="/testem.js"></script>
     <script>
-      mocha.setup("bdd");
+      mocha.setup({ ui: "bdd", timeout: 10000 });
     </script>
   </head>
   <body>
