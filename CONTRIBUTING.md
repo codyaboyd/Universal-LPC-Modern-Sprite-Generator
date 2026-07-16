@@ -239,6 +239,19 @@ The **Validate site sources** workflow (`.github/workflows/validate-site-sources
 
 #### Running Tests
 
+The suites are intentionally split so changes can be checked at the appropriate level:
+
+```bash
+npm run test:unit         # Node-only unit and generator checks
+npm run test:integration  # Testem component/state/canvas integration specs
+npm run test:e2e          # Playwright interaction workflows in Chromium
+npm test                  # Node and cross-browser Testem suites
+```
+
+Browser integration specs use small catalogs from `tests/fixtures/` whenever a full
+production catalog is not part of the behavior under test. This keeps composition,
+ordering, compatibility, randomization, preset, and history regressions deterministic.
+
 Browser specs run in real browsers via [Testem](https://github.com/testem/testem). Vite is embedded in middleware mode via [`vite-plugin-testem`](https://www.npmjs.com/package/vite-plugin-testem) (see [`testem.cjs`](testem.cjs)) so specs can `import` ESM from `sources/`. **`testem.cjs`** runs **Node** checks first (`before_tests`), then loads **[`tests_run.html`](tests_run.html)** with Mocha and [`tests/tests.js`](tests/tests.js).
 
 **Run the full suite**
@@ -274,6 +287,12 @@ This runs Testem in dev mode (browser picker / watch) against the same **[`tests
 #### Visual regression tests (Playwright + Argos)
 
 Full-page screenshots live under [`tests/visual/`](tests/visual/) and use [`playwright.config.js`](playwright.config.js) (separate from the Testem browser suite). [Argos](https://argos-ci.com/) uploads run only when **`ARGOS_TOKEN`** is set (a repository secret in CI).
+
+**Update visual snapshots:** this project stores approved baselines in Argos rather
+than committing Playwright PNG files. Run `ARGOS_TOKEN=... npm run test:visual:update`,
+inspect the uploaded build in Argos, and accept only the intentional diffs there.
+Without a token the same command remains a useful interaction/layout smoke test but
+does not modify or upload a baseline.
 
 **Run locally**
 

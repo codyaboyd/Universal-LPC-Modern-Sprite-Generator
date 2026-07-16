@@ -38,6 +38,8 @@ import "./state/meta_spec.js";
 import "./state/palettes_spec.js";
 import "./state/path_spec.js";
 import "./state/state_spec.js";
+import "./state/compatibility_spec.js";
+import "./state/modern-regression_spec.js";
 import "./utils/fileName_spec.js";
 import "./utils/helpers_spec.js";
 import "./utils/credits_spec.js";
