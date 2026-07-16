@@ -197,33 +197,30 @@ export const App: m.Component<AppAttrs, AppState> = {
           "Choose technical asset-compatible bases, gear, colors, and animation sheets without leaving the preview.",
         ),
       ]),
-      m(RandomizerPanel, { catalog: vnode.attrs.catalog }),
-      m("div.creator-workbench", [
-        m(
-          "aside.creator-categories",
-          { "aria-label": "Character customization categories" },
-          [
-            m(
-              "div.creator-categories__scroller",
-              [
-                "Body",
-                "Hair",
-                "Face",
-                "Torso",
-                "Legs",
-                "Feet",
-                "Gear",
-                "Weapons",
-              ].map((label) =>
-                m(
-                  "a.creator-category-pill",
-                  { href: "#category-tree-panel" },
-                  label,
-                ),
-              ),
-            ),
-          ],
+      m(
+        "nav.creator-journey.mb-3",
+        { "aria-label": "Character creation progress" },
+        [
+          ["1", "Start", "#character-library", "bi-folder2-open"],
+          ["2", "Base", "#customize-character", "bi-person"],
+          ["3", "Customize", "#customize-character", "bi-palette"],
+          ["4", "Equip", "#category-tree-panel", "bi-shield"],
+          ["5", "Preview", "#preview-stage-title", "bi-play-circle"],
+          ["6", "Save", "#character-details", "bi-save"],
+          ["7", "Export", "#export-actions", "bi-box-arrow-up"],
+        ].map(([number, label, href, icon]) =>
+          m("a.creator-journey__step", { href }, [
+            m("span.creator-journey__number", number),
+            m(`i.bi.${icon}`, { "aria-hidden": "true" }),
+            m("span", label),
+          ]),
         ),
+      ),
+      m(RandomizerPanel, { catalog: vnode.attrs.catalog }),
+      m("div", { id: "character-library" }, [
+        m(PresetManager, { catalog: vnode.attrs.catalog }),
+      ]),
+      m("div.creator-workbench", [
         m("section.creator-tools", { "aria-label": "Customizer tools" }, [
           m("div.creator-tools__header", [
             m("div", [
@@ -254,9 +251,8 @@ export const App: m.Component<AppAttrs, AppState> = {
               ],
             ),
           ]),
-          m(CharacterPresentation),
-          m(PresetManager, { catalog: vnode.attrs.catalog }),
           m(FiltersPanel, { catalog: vnode.attrs.catalog }),
+          m(CharacterPresentation),
           m("div.creator-advanced", [m(AdvancedTools)]),
           m("div.creator-advanced", [m(PowerUserTools)]),
         ]),
@@ -318,7 +314,11 @@ export const App: m.Component<AppAttrs, AppState> = {
         : null,
       m(
         "div.creator-bottom-bar",
-        { role: "toolbar", "aria-label": "Primary character actions" },
+        {
+          id: "export-actions",
+          role: "toolbar",
+          "aria-label": "Primary character actions",
+        },
         [
           m(
             "button.btn.btn-outline-light",

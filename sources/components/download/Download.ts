@@ -509,7 +509,7 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
           ? m(
               "div.notification.is-warning.is-light.rpg-anim-shake-error",
               {
-                key: `warnings-${exportWorkflow.validationNonce}-${warnings.join("|")}`,
+                "data-validation": exportWorkflow.validationNonce,
               },
               [
                 m("strong", "Validation warnings"),
@@ -527,7 +527,7 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
           ? m(
               "div.notification.is-danger.is-light.rpg-anim-shake-error",
               {
-                key: `error-${exportWorkflow.validationNonce}-${exportWorkflow.error}`,
+                "data-validation": exportWorkflow.validationNonce,
               },
               exportWorkflow.error,
             )
@@ -536,7 +536,7 @@ export const Download: m.Component<{ catalog: CatalogReader }> = {
           ? m(
               "progress.progress.is-small.is-primary.rpg-anim-gold-shimmer",
               {
-                key: `progress-${exportWorkflow.progress}-${exportWorkflow.completionNonce}`,
+                "data-completion": exportWorkflow.completionNonce,
                 max: 100,
                 value: exportWorkflow.isExporting ? undefined : 100,
               },
