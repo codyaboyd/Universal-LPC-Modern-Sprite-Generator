@@ -153,8 +153,14 @@ export async function loadImagesInParallel<T>(
     (item): Promise<LoadedImage<T>> =>
       loadImage(getPath(item), signal)
         .then((img): LoadedImage<T> => ({ item, img, success: true }))
-        .catch(() => {
-          debugWarn(`Failed to load sprite: ${getPath(item)}`);
+        .catch((error: unknown) => {
+          // Superseded character renders deliberately abort their outstanding
+          // image work. Treating that cancellation as an asset failure floods
+          // diagnostics and makes a healthy catalog look broken while a user
+          // quickly changes equipment.
+          if (!(error instanceof DOMException && error.name === "AbortError")) {
+            debugWarn(`Failed to load sprite: ${getPath(item)}`);
+          }
           return { item, img: null, success: false };
         }),
   );
