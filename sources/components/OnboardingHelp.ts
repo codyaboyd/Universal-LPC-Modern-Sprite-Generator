@@ -177,20 +177,6 @@ export const OnboardingHelp: m.Component<Record<string, never>, LocalState> = {
     );
 
     return m("div.creator-assistance", [
-      m(
-        "button.btn.btn-outline-light.btn-sm.creator-help-launch",
-        {
-          type: "button",
-          onclick: (event: Event) => {
-            local.returnFocus = event.currentTarget as HTMLElement;
-            local.helpOpen = true;
-            local.query = "";
-            focusDialog("creator-help-dialog");
-          },
-          "aria-haspopup": "dialog",
-        },
-        [m("i.bi.bi-question-circle.me-1", { "aria-hidden": "true" }), "Help"],
-      ),
       local.touring
         ? m("div.onboarding-layer", { role: "presentation" }, [
             m(

@@ -5,17 +5,24 @@ import { AdvancedTools } from "./advanced/AdvancedTools.ts";
 import { Credits } from "./download/Credits.ts";
 import { DiagnosticsPanel } from "./DiagnosticsPanel.ts";
 import { PowerUserTools } from "./PowerUserTools.ts";
+import { openContextHelp } from "./OnboardingHelp.ts";
 
 type MenuName = "settings" | "credits" | "advanced";
+type NavigationItemName = MenuName | "help";
 type NavigationState = {
   activeMenu: MenuName | null;
   keyHandler: (event: KeyboardEvent) => void;
 };
 
 const menuDetails: Record<
-  MenuName,
+  NavigationItemName,
   { label: string; icon: string; description: string }
 > = {
+  help: {
+    label: "Help",
+    icon: "bi-question-circle",
+    description: "Find guidance or restart the introductory tour.",
+  },
   settings: {
     label: "Settings",
     icon: "bi-gear",
@@ -60,7 +67,7 @@ export const NavigationMenus: m.Component<
       m(
         "ul.creator-navigation.nav.gap-2",
         { "aria-label": "Application menus" },
-        (Object.keys(menuDetails) as MenuName[]).map((name) => {
+        (Object.keys(menuDetails) as NavigationItemName[]).map((name) => {
           const menu = menuDetails[name];
           return m("li.nav-item", [
             m(
@@ -70,6 +77,10 @@ export const NavigationMenus: m.Component<
                 "aria-haspopup": "dialog",
                 "aria-expanded": active === name ? "true" : "false",
                 onclick: () => {
+                  if (name === "help") {
+                    openContextHelp();
+                    return;
+                  }
                   vnode.state.activeMenu = name;
                 },
               },
