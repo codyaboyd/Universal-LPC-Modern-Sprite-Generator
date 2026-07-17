@@ -696,6 +696,172 @@ body {
   }
 }
 
+/* High-fantasy visual language and high-contrast form controls. */
+.app-topbar::after {
+  position: absolute;
+  right: 0;
+  bottom: -0.35rem;
+  left: 0;
+  height: 0.4rem;
+  content: "";
+  background: linear-gradient(
+    90deg,
+    transparent,
+    #80591f 12%,
+    #ffe29a 50%,
+    #80591f 88%,
+    transparent
+  );
+  clip-path: polygon(0 0, 100% 0, 98% 45%, 100% 100%, 0 100%, 2% 45%);
+}
+
+.app-brand__crest {
+  display: grid;
+  width: 2.65rem;
+  height: 2.65rem;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid #f4ca6a;
+  border-radius: 50% 50% 44% 44%;
+  background: radial-gradient(circle, #614978, #24172f 70%);
+  box-shadow:
+    inset 0 0 0 3px #17101e,
+    0 0 1rem rgb(255 209 102 / 30%);
+}
+
+.app-brand__wordmark {
+  display: grid;
+  line-height: 1.05;
+  text-shadow: 0 2px 8px #000;
+}
+
+.app-brand__wordmark small {
+  margin-top: 0.32rem;
+  color: #f1c96e;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+}
+
+.app-panel::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0.38rem;
+  border: 1px solid rgb(122 87 48 / 32%);
+  border-radius: calc(var(--rpg-radius-lg) - 0.25rem);
+  content: "";
+  pointer-events: none;
+}
+
+.app-region-title {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  padding-bottom: 0.65rem;
+  border-bottom: 1px solid rgb(122 87 48 / 38%);
+  font-family: Georgia, "Times New Roman", serif;
+  font-weight: 700;
+  letter-spacing: 0.035em;
+}
+
+.app-region-title::after {
+  height: 1px;
+  flex: 1;
+  margin-left: 0.5rem;
+  content: "";
+  background: linear-gradient(90deg, #b98a2e, transparent);
+}
+
+/* Override framework defaults so every editable field reads as ink on vellum. */
+:where(.app-shell, .modal, .offcanvas)
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+    textarea,
+    select,
+    .input,
+    .textarea,
+    .form-control,
+    .form-select,
+    .select select
+  ) {
+  color: #21170f !important;
+  caret-color: #4f286b;
+  background-color: #fffdf5 !important;
+  border: 2px solid #76552e !important;
+  box-shadow:
+    inset 0 2px 4px rgb(61 43 31 / 10%),
+    0 1px 0 rgb(255 255 255 / 65%);
+}
+
+:where(.app-shell, .modal, .offcanvas) :where(input, textarea)::placeholder {
+  color: #695b50 !important;
+  opacity: 1;
+}
+
+:where(.app-shell, .modal, .offcanvas)
+  :where(
+    input:not([type="checkbox"]):not([type="radio"]),
+    textarea,
+    select,
+    .input,
+    .textarea,
+    .form-control,
+    .form-select,
+    .select select
+  ):focus {
+  border-color: #6d348d !important;
+  outline: 3px solid #ffd166 !important;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 0.28rem rgb(109 52 141 / 20%) !important;
+}
+
+:where(.app-shell, .modal, .offcanvas)
+  :where(
+    input:disabled,
+    textarea:disabled,
+    select:disabled,
+    .form-control:disabled,
+    .form-select:disabled
+  ) {
+  color: #51483f !important;
+  background-color: #d7cbb5 !important;
+  border-color: #746b5e !important;
+  opacity: 1;
+}
+
+:where(.app-shell, .modal, .offcanvas) :where(label, legend, .label) {
+  color: #2b1d13 !important;
+  font-weight: 700;
+}
+
+:where(.app-shell, .modal, .offcanvas) input[type="checkbox"],
+:where(.app-shell, .modal, .offcanvas) input[type="radio"] {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: #6d348d;
+}
+
+.btn-primary,
+.button.is-primary,
+.button.is-link {
+  color: #fffdf5 !important;
+  border-color: #d9ac4f !important;
+  background: linear-gradient(180deg, #754595, #45245d) !important;
+  box-shadow:
+    inset 0 1px rgb(255 255 255 / 22%),
+    0 3px 8px rgb(37 18 48 / 25%);
+  font-weight: 700;
+}
+
+.btn-primary:hover,
+.button.is-primary:hover,
+.button.is-link:hover {
+  color: #21170f !important;
+  background: linear-gradient(180deg, #ffe39b, #d9a63e) !important;
+}
+
 .item-browser__results {
   content-visibility: auto;
 }
