@@ -42,6 +42,29 @@ test("keyboard shortcut opens and traps focus in the Bootstrap export offcanvas"
   await expect(sheet).not.toHaveClass(/show/);
 });
 
+test("navigation menus open a viewport dialog and lock page scrolling", async ({
+  page,
+}) => {
+  const skipTour = page.getByRole("button", { name: "Skip tour" });
+  if (await skipTour.isVisible()) await skipTour.click();
+  await page.getByRole("button", { name: "Settings" }).click();
+
+  const modal = page.locator(".creator-menu-modal");
+  await expect(modal).toBeVisible();
+  await expect(modal.getByRole("heading", { name: "Settings" })).toBeVisible();
+  await expect(page.locator("body")).toHaveClass(/modal-open/);
+  await expect(page.locator("body > .creator-menu-portal")).toContainText(
+    "Settings",
+  );
+
+  const bounds = await modal.boundingBox();
+  expect(bounds).toEqual({ x: 0, y: 0, width: 1280, height: 720 });
+
+  await modal.getByRole("button", { name: "Close Settings menu" }).click();
+  await expect(modal).toBeHidden();
+  await expect(page.locator("body")).not.toHaveClass(/modal-open/);
+});
+
 test("mobile category navigation and Bootstrap modal are operable", async ({
   page,
 }) => {

@@ -13,6 +13,36 @@ type NavigationState = {
   activeMenu: MenuName | null;
   keyHandler: (event: KeyboardEvent) => void;
 };
+type PortalState = { host: HTMLDivElement | null };
+
+const BodyPortal: m.Component<{ content: m.Children }, PortalState> = {
+  oninit(vnode) {
+    vnode.state.host = null;
+  },
+  oncreate(vnode) {
+    const host = document.createElement("div");
+    host.className = "creator-menu-portal";
+    document.body.append(host);
+    vnode.state.host = host;
+    m.render(host, vnode.attrs.content);
+  },
+  onupdate(vnode) {
+    if (vnode.state.host) m.render(vnode.state.host, vnode.attrs.content);
+  },
+  onremove(vnode) {
+    if (!vnode.state.host) return;
+    m.render(vnode.state.host, null);
+    vnode.state.host.remove();
+    vnode.state.host = null;
+  },
+  view() {
+    return null;
+  },
+};
+
+const setMenuOpen = (open: boolean) => {
+  document.body.classList.toggle("modal-open", open);
+};
 
 const menuDetails: Record<
   NavigationItemName,
@@ -49,6 +79,7 @@ export const NavigationMenus: m.Component<
     vnode.state.keyHandler = (event: KeyboardEvent) => {
       if (event.key === "Escape" && vnode.state.activeMenu) {
         vnode.state.activeMenu = null;
+        setMenuOpen(false);
         m.redraw();
       }
     };
@@ -56,10 +87,12 @@ export const NavigationMenus: m.Component<
   },
   onremove(vnode) {
     window.removeEventListener("keydown", vnode.state.keyHandler);
+    setMenuOpen(false);
   },
   view(vnode) {
     const close = () => {
       vnode.state.activeMenu = null;
+      setMenuOpen(false);
     };
     const active = vnode.state.activeMenu;
 
@@ -82,6 +115,7 @@ export const NavigationMenus: m.Component<
                     return;
                   }
                   vnode.state.activeMenu = name;
+                  setMenuOpen(true);
                 },
               },
               [
@@ -93,62 +127,64 @@ export const NavigationMenus: m.Component<
         }),
       ),
       active
-        ? [
-            m("div.modal-backdrop.fade.show.creator-menu-backdrop", {
-              onclick: close,
-              "aria-hidden": "true",
-            }),
-            m(
-              "div.modal.fade.show.d-block.creator-menu-modal",
-              {
-                role: "dialog",
-                "aria-modal": "true",
-                "aria-labelledby": `creator-${active}-menu-title`,
-                onclick: (event: MouseEvent) => {
-                  if (event.target === event.currentTarget) close();
+        ? m(BodyPortal, {
+            content: [
+              m("div.modal-backdrop.fade.show.creator-menu-backdrop", {
+                onclick: close,
+                "aria-hidden": "true",
+              }),
+              m(
+                "div.modal.fade.show.d-block.creator-menu-modal",
+                {
+                  role: "dialog",
+                  "aria-modal": "true",
+                  "aria-labelledby": `creator-${active}-menu-title`,
+                  onclick: (event: MouseEvent) => {
+                    if (event.target === event.currentTarget) close();
+                  },
                 },
-              },
-              [
-                m(
-                  "div.modal-dialog.modal-dialog-centered.modal-dialog-scrollable",
-                  [
-                    m("div.modal-content", [
-                      m("div.modal-header", [
-                        m("div", [
-                          m(
-                            `h2#creator-${active}-menu-title.h5.modal-title`,
-                            menuDetails[active].label,
-                          ),
-                          m(
-                            "p.small.text-muted.mb-0.mt-1",
-                            menuDetails[active].description,
-                          ),
+                [
+                  m(
+                    "div.modal-dialog.modal-dialog-centered.modal-dialog-scrollable",
+                    [
+                      m("div.modal-content", [
+                        m("div.modal-header", [
+                          m("div", [
+                            m(
+                              `h2#creator-${active}-menu-title.h5.modal-title`,
+                              menuDetails[active].label,
+                            ),
+                            m(
+                              "p.small.text-muted.mb-0.mt-1",
+                              menuDetails[active].description,
+                            ),
+                          ]),
+                          m("button.btn-close", {
+                            type: "button",
+                            "aria-label": `Close ${menuDetails[active].label} menu`,
+                            onclick: close,
+                          }),
                         ]),
-                        m("button.btn-close", {
-                          type: "button",
-                          "aria-label": `Close ${menuDetails[active].label} menu`,
-                          onclick: close,
-                        }),
+                        m("div.modal-body.creator-menu-modal__body", [
+                          active === "settings" ? m(AmbientSettings) : null,
+                          active === "credits"
+                            ? m(Credits, { catalog: vnode.attrs.catalog })
+                            : null,
+                          active === "advanced"
+                            ? [
+                                m(AdvancedTools),
+                                m(PowerUserTools),
+                                m(DiagnosticsPanel),
+                              ]
+                            : null,
+                        ]),
                       ]),
-                      m("div.modal-body.creator-menu-modal__body", [
-                        active === "settings" ? m(AmbientSettings) : null,
-                        active === "credits"
-                          ? m(Credits, { catalog: vnode.attrs.catalog })
-                          : null,
-                        active === "advanced"
-                          ? [
-                              m(AdvancedTools),
-                              m(PowerUserTools),
-                              m(DiagnosticsPanel),
-                            ]
-                          : null,
-                      ]),
-                    ]),
-                  ],
-                ),
-              ],
-            ),
-          ]
+                    ],
+                  ),
+                ],
+              ),
+            ],
+          })
         : null,
     ];
   },
