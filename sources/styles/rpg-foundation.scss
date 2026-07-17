@@ -457,6 +457,16 @@ body {
   text-transform: uppercase;
   font-weight: 700;
 }
+.creator-hero {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--rpg-space-4);
+}
+.creator-hero__export {
+  flex: 0 0 auto;
+  box-shadow: 0 0 1.25rem rgb(255 209 102 / 20%);
+}
 .creator-workbench {
   display: block;
 }
@@ -1531,9 +1541,7 @@ textarea {
 }
 
 .rpg-creator {
-  padding-bottom: calc(
-    var(--mobile-action-bar-height) + var(--safe-area-bottom) + 1rem
-  );
+  padding-bottom: calc(var(--safe-area-bottom) + 1rem);
 }
 
 .offcanvas.export-sheet,
@@ -1863,18 +1871,39 @@ textarea {
   padding: max(1rem, env(safe-area-inset-top))
     max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
     max(1rem, env(safe-area-inset-left));
-  background: rgb(10 14 24 / 72%);
+  background:
+    radial-gradient(
+      circle at 50% 35%,
+      rgb(112 72 183 / 24%),
+      transparent 32rem
+    ),
+    rgb(10 8 18 / 82%);
+  backdrop-filter: blur(5px);
 }
 
 .onboarding-callout {
+  position: relative;
   width: min(30rem, 100%);
   max-height: calc(100dvh - 2rem);
   overflow: auto;
   padding: 1.25rem;
-  border: 1px solid rgb(244 190 64 / 70%);
+  border: 2px solid var(--rpg-border-gold);
   border-radius: 1rem;
-  background: var(--bs-body-bg, #fff);
-  box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 35%);
+  color: var(--rpg-surface-parchment-ink);
+  background:
+    linear-gradient(135deg, rgb(255 255 255 / 48%), transparent 45%),
+    var(--rpg-surface-panel);
+  box-shadow:
+    0 1.5rem 4rem rgb(0 0 0 / 45%),
+    inset 0 0 2rem rgb(185 138 46 / 10%);
+}
+.fantasy-dialog__rune {
+  position: absolute;
+  top: 0.7rem;
+  right: 1rem;
+  color: var(--rpg-border-gold);
+  font-size: 1.6rem;
+  text-shadow: 0 0 0.75rem rgb(215 164 65 / 55%);
 }
 
 .onboarding-progress {
@@ -1891,8 +1920,12 @@ textarea {
   width: min(46rem, 100%);
   max-height: calc(100dvh - 2rem);
   flex-direction: column;
+  border: 2px solid var(--rpg-border-gold);
   border-radius: 1rem;
-  background: var(--bs-body-bg, #fff);
+  color: var(--rpg-surface-parchment-ink);
+  background:
+    linear-gradient(145deg, rgb(255 255 255 / 48%), transparent 42%),
+    var(--rpg-surface-panel);
   box-shadow: 0 1.5rem 4rem rgb(0 0 0 / 40%);
   overflow: hidden;
 }
@@ -1904,6 +1937,32 @@ textarea {
   gap: 1rem;
   padding: 1rem 1.25rem;
   border-bottom: 1px solid rgb(0 0 0 / 12%);
+}
+.help-modal__header {
+  color: var(--rpg-text-inverse);
+  border-bottom-color: rgb(255 209 102 / 35%);
+  background:
+    radial-gradient(circle at 15% 0, rgb(183 125 255 / 28%), transparent 16rem),
+    linear-gradient(135deg, #21172b, #3a2447);
+}
+.help-modal__title {
+  display: flex;
+  align-items: center;
+  gap: 0.8rem;
+}
+.help-modal__crest {
+  display: grid;
+  width: 2.5rem;
+  height: 2.5rem;
+  place-items: center;
+  border: 1px solid rgb(255 209 102 / 65%);
+  border-radius: 50%;
+  color: var(--rpg-accent-gold-bright);
+  font-size: 1.35rem;
+  box-shadow: inset 0 0 0.8rem rgb(255 209 102 / 16%);
+}
+.help-modal__header .btn-close {
+  filter: invert(1) sepia(0.4);
 }
 .help-modal__footer {
   border-top: 1px solid rgb(0 0 0 / 12%);
@@ -1920,9 +1979,38 @@ textarea {
 .help-article,
 .item-browser__empty {
   padding: 1rem;
-  border: 1px solid rgb(0 0 0 / 12%);
+  border: 1px solid rgb(122 87 48 / 32%);
   border-radius: 0.75rem;
-  background: rgb(248 249 250 / 85%);
+  background: linear-gradient(145deg, #fffaf0, #f1dfba);
+  box-shadow: 0 0.25rem 0.8rem rgb(61 43 31 / 8%);
+}
+.help-article h3::before {
+  content: "◆";
+  margin-right: 0.5rem;
+  color: var(--rpg-border-gold);
+  font-size: 0.7em;
+}
+
+/* Keep native and enhanced dropdowns legible regardless of OS color scheme. */
+.form-select,
+.select select,
+select,
+.dropdown-menu {
+  color: var(--rpg-text-primary) !important;
+  background-color: #fff8e7 !important;
+  border-color: rgb(122 87 48 / 48%);
+}
+select option,
+select optgroup,
+.dropdown-item {
+  color: #241a14 !important;
+  background: #fff8e7 !important;
+}
+.dropdown-item:hover,
+.dropdown-item:focus,
+.dropdown-item.active {
+  color: #241a14 !important;
+  background: #ead7a7 !important;
 }
 .item-browser__empty {
   text-align: center;

@@ -32,7 +32,7 @@ const TOUR_STEPS: TourStep[] = [
   {
     title: "Export your sprite sheet",
     body: "Open Export for PNG, animation, ZIP, and preset options. Save PNG is the fastest way to download the full sheet.",
-    target: ".creator-bottom-bar",
+    target: "#export-actions",
   },
 ];
 
@@ -190,6 +190,7 @@ export const OnboardingHelp: m.Component<Record<string, never>, LocalState> = {
                 "data-active-dialog": "true",
               },
               [
+                m("div.fantasy-dialog__rune", { "aria-hidden": "true" }, "✦"),
                 m(
                   "div.onboarding-progress",
                   `Step ${local.step + 1} of ${TOUR_STEPS.length}`,
@@ -266,13 +267,16 @@ export const OnboardingHelp: m.Component<Record<string, never>, LocalState> = {
               },
               [
                 m("header.help-modal__header", [
-                  m("div", [
-                    m("span.creator-kicker", "Adventurer's handbook"),
-                    m(
-                      "h2.h4.mb-0",
-                      { id: "creator-help-title" },
-                      "Creator help",
-                    ),
+                  m("div.help-modal__title", [
+                    m("span.help-modal__crest", { "aria-hidden": "true" }, "✧"),
+                    m("div", [
+                      m("span.creator-kicker", "Adventurer's handbook"),
+                      m(
+                        "h2.h4.mb-0",
+                        { id: "creator-help-title" },
+                        "Creator help",
+                      ),
+                    ]),
                   ]),
                   m("button.btn-close", {
                     type: "button",
