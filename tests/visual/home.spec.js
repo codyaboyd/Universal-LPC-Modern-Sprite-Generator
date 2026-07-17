@@ -73,6 +73,24 @@ async function homepageAndSkintonePalette(page, viewport, shotName) {
 }
 
 test.describe("Homepage — full page", () => {
+  test("the document can be scrolled", async ({ page }) => {
+    await page.setViewportSize(VIEWPORTS.mobile);
+    await gotoHomepageReady(page, BASE_URL);
+
+    const scrollState = await page.evaluate(() => ({
+      viewportHeight: window.innerHeight,
+      documentHeight: document.documentElement.scrollHeight,
+    }));
+
+    test
+      .expect(scrollState.documentHeight)
+      .toBeGreaterThan(scrollState.viewportHeight);
+    await page.mouse.wheel(0, scrollState.viewportHeight);
+    await test.expect
+      .poll(() => page.evaluate(() => window.scrollY))
+      .toBeGreaterThan(0);
+  });
+
   test("mobile viewport", async ({ page }) => {
     await homepageAndSkintonePalette(page, VIEWPORTS.mobile, "index-mobile");
   });

@@ -5,8 +5,8 @@ html {
 }
 
 body {
-  height: calc(100dvh - 12px);
-  overflow-y: hidden;
+  min-height: 100dvh;
+  overflow-y: visible;
   font-family: monospace;
   font-size: 16px;
   line-height: 24px;
