@@ -1338,12 +1338,22 @@ body {
     0 0 0 3px rgb(215 164 65 / 12%);
 }
 
-.creator-menu-modal {
-  z-index: var(--rpg-z-modal);
+.creator-menu-modal.modal {
+  /* Keep this explicit: Bootstrap's modal custom property is locally scoped. */
+  z-index: 1055;
+}
+
+/*
+ * backdrop-filter makes fixed descendants use the top bar as their containing
+ * block. The navigation dialogs live beside their buttons, so temporarily
+ * remove that containing block and let the dialog cover the viewport.
+ */
+.app-topbar:has(.creator-menu-modal) {
+  backdrop-filter: none;
 }
 
 .creator-menu-backdrop {
-  z-index: calc(var(--rpg-z-modal) - 1);
+  z-index: 1054;
   background: rgb(10 14 24 / 68%);
   opacity: 1;
   backdrop-filter: blur(3px);
