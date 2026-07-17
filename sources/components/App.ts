@@ -20,7 +20,6 @@ import { downloadAsPNG } from "../canvas/download.ts";
 import {
   dismissAutosaveRecovery,
   resilienceState,
-  safeReset,
   writeAutosave,
   reportUserError,
 } from "../resilience.ts";
@@ -187,11 +186,26 @@ export const App: m.Component<AppAttrs, AppState> = {
   view(vnode) {
     return m("div.rpg-creator", [
       m("div.creator-hero.mb-3", [
-        m("span.creator-kicker", "Arcane atelier"),
-        m("h2.h4.mb-1", "Forge your hero"),
+        m("div", [
+          m("span.creator-kicker", "Arcane atelier"),
+          m("h2.h4.mb-1", "Forge your hero"),
+          m(
+            "p.mb-0",
+            "Choose technical asset-compatible bases, gear, colors, and animation sheets without leaving the preview.",
+          ),
+        ]),
         m(
-          "p.mb-0",
-          "Choose technical asset-compatible bases, gear, colors, and animation sheets without leaving the preview.",
+          "button.btn.btn-warning.creator-hero__export",
+          {
+            id: "export-actions",
+            type: "button",
+            "data-bs-toggle": "offcanvas",
+            "data-bs-target": "#exportSheet",
+          },
+          [
+            m("i.bi.bi-box-arrow-up.me-2", { "aria-hidden": "true" }),
+            "Export hero",
+          ],
         ),
       ]),
       m(
@@ -301,64 +315,6 @@ export const App: m.Component<AppAttrs, AppState> = {
             ),
           )
         : null,
-      m(
-        "div.creator-bottom-bar",
-        {
-          id: "export-actions",
-          role: "toolbar",
-          "aria-label": "Primary character actions",
-        },
-        [
-          m(
-            "button.btn.btn-outline-light",
-            {
-              type: "button",
-              onclick: () => rerollVisibleChoices(vnode.attrs.catalog),
-            },
-            [m("i.bi.bi-dice-5.me-1"), "Randomize"],
-          ),
-          m(
-            "button.btn.btn-outline-warning",
-            { type: "button", onclick: () => void safeReset() },
-            [m("i.bi.bi-arrow-counterclockwise.me-1"), "Reset"],
-          ),
-          m(
-            "button.btn.btn-warning",
-            {
-              type: "button",
-              onclick: () =>
-                void downloadAsPNG("character-spritesheet.png").catch(
-                  (error) => {
-                    reportUserError(
-                      "Export failed. Please try again or copy diagnostics.",
-                      error,
-                    );
-                    m.redraw();
-                  },
-                ),
-            },
-            [m("i.bi.bi-download.me-1"), "Save PNG"],
-          ),
-          m(
-            "button.btn.btn-dark",
-            {
-              type: "button",
-              "data-bs-toggle": "offcanvas",
-              "data-bs-target": "#exportSheet",
-            },
-            [m("i.bi.bi-box-arrow-up.me-1"), "Export"],
-          ),
-          m(
-            "button.btn.btn-link.text-light",
-            {
-              type: "button",
-              "aria-label": "Help with exporting sprite sheets",
-              onclick: () => openContextHelp("export sprite sheet"),
-            },
-            m("i.bi.bi-question-circle", { "aria-hidden": "true" }),
-          ),
-        ],
-      ),
       m(
         "div.offcanvas.offcanvas-bottom.export-sheet",
         {
