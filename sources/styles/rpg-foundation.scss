@@ -1349,10 +1349,13 @@ body {
   --mobile-visible-height: 100dvh;
 }
 
-html,
+html {
+  /* Keep horizontal overflow at the viewport without turning body into a scroller. */
+  overflow-x: hidden;
+}
+
 body {
   max-width: 100%;
-  overflow-x: clip;
   overscroll-behavior-x: none;
 }
 
