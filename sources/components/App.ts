@@ -4,11 +4,8 @@ import { state } from "../state/state.ts";
 import { syncSelectionsToHash } from "../state/hash.ts";
 import type { CatalogReader } from "../state/catalog.ts";
 import { Download } from "./download/Download.ts";
-import { DiagnosticsPanel } from "./DiagnosticsPanel.ts";
 import { FiltersPanel } from "./FiltersPanel.ts";
-import { Credits } from "./download/Credits.ts";
-import { AdvancedTools } from "./advanced/AdvancedTools.ts";
-import { PowerUserTools, ShortcutHelpModal } from "./PowerUserTools.ts";
+import { ShortcutHelpModal } from "./PowerUserTools.ts";
 import {
   recordSelectionHistory,
   redoSelections,
@@ -253,15 +250,8 @@ export const App: m.Component<AppAttrs, AppState> = {
           ]),
           m(FiltersPanel, { catalog: vnode.attrs.catalog }),
           m(CharacterPresentation),
-          m("div.creator-advanced", [m(AdvancedTools)]),
-          m("div.creator-advanced", [m(PowerUserTools)]),
         ]),
       ]),
-      m(
-        "section.creator-summary.app-panel.p-3.mt-3",
-        { "aria-label": "Character credits and summary" },
-        [m(Credits, { catalog: vnode.attrs.catalog })],
-      ),
       resilienceState.recoveredAutosave
         ? m("div.alert.alert-info", [
             resilienceState.lastRecoveryMessage,
@@ -278,7 +268,6 @@ export const App: m.Component<AppAttrs, AppState> = {
             ),
           ])
         : null,
-      m(DiagnosticsPanel),
       m(ShortcutHelpModal),
       interactionFeedback.toasts.length
         ? m(

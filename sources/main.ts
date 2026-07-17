@@ -76,10 +76,8 @@ import { initHashChangeListener } from "./state/hash.ts";
 
 // Import components
 import { App } from "./components/App.ts";
-import {
-  AmbientSettings,
-  initAmbientAtmosphere,
-} from "./ambient-atmosphere.ts";
+import { initAmbientAtmosphere } from "./ambient-atmosphere.ts";
+import { NavigationMenus } from "./components/NavigationMenus.ts";
 import { AnimationPreview } from "./components/preview/AnimationPreview.ts";
 import { FullSpritesheetPreview } from "./components/preview/FullSpritesheetPreview.ts";
 import { OnboardingHelp } from "./components/OnboardingHelp.ts";
@@ -145,7 +143,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document.body.append(assistanceRoot);
   m.mount(assistanceRoot, OnboardingHelp);
   initAmbientAtmosphere();
-  m.mount(document.getElementById("ambient-settings-root")!, AmbientSettings);
+  m.mount(document.getElementById("navigation-menus-root")!, {
+    view: () => m(NavigationMenus, { catalog: defaultCatalog }),
+  });
   // Mount roots are static markup in index.html; assert non-null.
   // App is the composition root for catalog DI — services pass through via attrs.
   m.mount(document.getElementById("mithril-filters")!, {

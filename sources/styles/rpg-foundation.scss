@@ -1307,6 +1307,56 @@ body {
   margin: 0;
 }
 
+.creator-navigation {
+  margin: 0;
+  padding: 0;
+}
+
+.creator-navigation__button {
+  min-width: 6.5rem;
+}
+
+.creator-menu-modal {
+  z-index: var(--rpg-z-modal);
+}
+
+.creator-menu-backdrop {
+  z-index: calc(var(--rpg-z-modal) - 1);
+}
+
+.creator-menu-modal .modal-dialog {
+  width: min(46rem, calc(100% - 2rem));
+  max-width: 46rem;
+}
+
+.creator-menu-modal__body > * + * {
+  margin-top: 1rem;
+}
+
+.creator-menu-modal__body .ambient-settings {
+  width: 100%;
+  max-width: none;
+}
+
+.creator-menu-modal__body .app-panel {
+  margin-top: 1rem !important;
+}
+
+@media (max-width: 575.98px) {
+  .creator-navigation {
+    width: 100%;
+  }
+
+  .creator-navigation .nav-item {
+    flex: 1;
+  }
+
+  .creator-navigation__button {
+    width: 100%;
+    min-width: 0;
+  }
+}
+
 @keyframes ambient-fog-drift {
   to {
     transform: translate3d(4%, -2%, 0);
