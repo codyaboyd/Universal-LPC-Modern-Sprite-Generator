@@ -27,28 +27,10 @@ export const Credits: m.Component<{ catalog: CatalogReader }> = {
         id: "credits-section",
       },
       [
-        m("p.is-size-7.mb-2", [
-          "You must credit the authors of this artwork. ",
-          m(
-            "a",
-            {
-              href: "https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/blob/master/README.md",
-              target: "_blank",
-            },
-            "Detailed attribution instructions",
-          ),
-        ]),
-        m("p.is-size-7.mb-3", [
-          "License information for all spritesheets in this generator is available ",
-          m(
-            "a",
-            {
-              href: "https://github.com/liberatedpixelcup/Universal-LPC-Spritesheet-Character-Generator/raw/refs/heads/master/CREDITS.csv",
-              target: "_blank",
-            },
-            "here",
-          ),
-        ]),
+        m(
+          "p.is-size-7.mb-3",
+          "Authors and licenses for the artwork in this character are listed below.",
+        ),
 
         !state.previewBootstrapRenderDone
           ? m("p.has-text-grey", "Loading selections…")
