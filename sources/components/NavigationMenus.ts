@@ -44,6 +44,10 @@ const setMenuOpen = (open: boolean) => {
   document.body.classList.toggle("modal-open", open);
 };
 
+const setMenuOpen = (open: boolean) => {
+  document.body.classList.toggle("modal-open", open);
+};
+
 const menuDetails: Record<
   NavigationItemName,
   { label: string; icon: string; description: string }

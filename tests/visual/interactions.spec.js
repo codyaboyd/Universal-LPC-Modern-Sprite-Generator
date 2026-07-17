@@ -53,9 +53,6 @@ test("navigation menus open a viewport dialog and lock page scrolling", async ({
   await expect(modal).toBeVisible();
   await expect(modal.getByRole("heading", { name: "Settings" })).toBeVisible();
   await expect(page.locator("body")).toHaveClass(/modal-open/);
-  await expect(page.locator("body > .creator-menu-portal")).toContainText(
-    "Settings",
-  );
 
   const bounds = await modal.boundingBox();
   expect(bounds).toEqual({ x: 0, y: 0, width: 1280, height: 720 });

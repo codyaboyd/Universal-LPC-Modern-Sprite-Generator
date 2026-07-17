@@ -1343,6 +1343,15 @@ body {
   z-index: 1055;
 }
 
+/*
+ * backdrop-filter makes fixed descendants use the top bar as their containing
+ * block. The navigation dialogs live beside their buttons, so temporarily
+ * remove that containing block and let the dialog cover the viewport.
+ */
+.app-topbar:has(.creator-menu-modal) {
+  backdrop-filter: none;
+}
+
 .creator-menu-backdrop {
   z-index: 1054;
   background: rgb(10 14 24 / 68%);
