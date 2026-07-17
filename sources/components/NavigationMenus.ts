@@ -14,6 +14,10 @@ type NavigationState = {
   keyHandler: (event: KeyboardEvent) => void;
 };
 
+const setMenuOpen = (open: boolean) => {
+  document.body.classList.toggle("modal-open", open);
+};
+
 const menuDetails: Record<
   NavigationItemName,
   { label: string; icon: string; description: string }
@@ -49,6 +53,7 @@ export const NavigationMenus: m.Component<
     vnode.state.keyHandler = (event: KeyboardEvent) => {
       if (event.key === "Escape" && vnode.state.activeMenu) {
         vnode.state.activeMenu = null;
+        setMenuOpen(false);
         m.redraw();
       }
     };
@@ -56,10 +61,12 @@ export const NavigationMenus: m.Component<
   },
   onremove(vnode) {
     window.removeEventListener("keydown", vnode.state.keyHandler);
+    setMenuOpen(false);
   },
   view(vnode) {
     const close = () => {
       vnode.state.activeMenu = null;
+      setMenuOpen(false);
     };
     const active = vnode.state.activeMenu;
 
@@ -82,6 +89,7 @@ export const NavigationMenus: m.Component<
                     return;
                   }
                   vnode.state.activeMenu = name;
+                  setMenuOpen(true);
                 },
               },
               [
